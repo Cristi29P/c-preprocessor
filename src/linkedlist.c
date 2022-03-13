@@ -1,8 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "linkedlist.h"
-#include "utils.h"
 
 void init_list(struct LinkedList *list)
 {
