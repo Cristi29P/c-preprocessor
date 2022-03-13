@@ -11,8 +11,7 @@ void init_list(struct LinkedList *list)
 
 void add_nth_node(struct LinkedList *list, int n, void *new_data)
 {
-	struct Node *prev, *curr;
-	struct Node *new_node;
+	struct Node *prev, *curr, *new_node;
 
 	if (list == NULL) {
 		return;
@@ -33,7 +32,7 @@ void add_nth_node(struct LinkedList *list, int n, void *new_data)
 		--n;
 	}
 
-	new_node = (struct Node *)malloc(sizeof(struct Node));
+	new_node = (struct Node *)calloc(1, sizeof(struct Node));
 	new_node->data = new_data;
 	new_node->next = curr;
 	if (prev == NULL) {
