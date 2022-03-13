@@ -1,13 +1,15 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Wconversion -g
+CFLAGS = -Wall -Wextra -g
 
 build: test
 
-test: test.o linkedlist.o
+test: test.o linkedlist.o hashmap.o
 
 test.o: test.c
 
 linkedlist.o: linkedlist.c
+
+hashmap.o: hashmap.c
 
 .PHONY: clean
 
