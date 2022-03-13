@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "linkedlist.h"
+#include "utils.h"
 
 void init_list(struct LinkedList *list)
 {
@@ -33,6 +34,8 @@ void add_nth_node(struct LinkedList *list, int n, void *new_data)
 	}
 
 	new_node = (struct Node *)calloc(1, sizeof(struct Node));
+	DIE(new_node == NULL, "Memory allocation for the new_node failed!");
+
 	new_node->data = new_data;
 	new_node->next = curr;
 	if (prev == NULL) {
