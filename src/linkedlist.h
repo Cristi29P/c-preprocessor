@@ -1,6 +1,8 @@
 #ifndef __LINKEDLIST_H__
 #define __LINKEDLIST_H__
 
+#include "utils.h"
+
 struct Node {
 	void *data; /* Pentru ca datele stocate sa poata avea orice tip, folosim
 		       un pointer la void. */
