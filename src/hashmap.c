@@ -15,7 +15,7 @@ unsigned int hash_function_string(void *a)
 	return hash;
 }
 
-void init_ht(struct Hashtable *ht, int hmax,
+void init_ht(struct Hashmap *ht, int hmax,
 	     unsigned int (*hash_function)(void *),
 	     int (*compare_function)(void *, void *))
 {
@@ -26,31 +26,35 @@ void init_ht(struct Hashtable *ht, int hmax,
 
 	int i;
 
-	ht->buckets = malloc(hmax * sizeof(struct LinkedList));
+	ht->buckets =
+	    (struct LinkedList *)calloc(hmax, sizeof(struct LinkedList));
+	DIE(ht->buckets == NULL, "Memory allocation failed for ht->buckets!");
 	for (i = 0; i < hmax; i++) {
 		init_list(&ht->buckets[i]);
 	}
 }
 
-void put(struct Hashtable *ht, void *key, int key_size_bytes, void *value)
+void put(struct Hashmap *ht, void *key, int key_size_bytes, void *value)
 {
-	int index;
-	struct info *info_tmp;
-	index = ht->hash_function(key) % ht->hmax;
-
+	struct pair *info_tmp;
+	int index = ht->hash_function(key) % ht->hmax;
 	struct Node *it = ht->buckets[index].head;
 
 	while (it != NULL) {
-		if (ht->compare_function(((struct info *)it->data)->key, key) ==
+		if (ht->compare_function(((struct pair *)it->data)->key, key) ==
 		    0) {
-			((struct info *)it->data)->value = value;
+			((struct pair *)it->data)->value = value;
 			return;
 		}
 		it = it->next;
 	}
 
-	info_tmp = malloc(sizeof(struct info));
-	info_tmp->key = malloc(key_size_bytes);
+	info_tmp = (struct pair *)calloc(1, sizeof(struct pair));
+	DIE(info_tmp == NULL, "Memory allocation for info_tmp failed!");
+	info_tmp->key = calloc(key_size_bytes, sizeof(char));
+	DIE(info_tmp->key == NULL,
+	    "Memory allocation for info_tmp->key failed!");
+
 	memcpy(info_tmp->key, key, key_size_bytes);
 
 	info_tmp->value = value;
@@ -60,15 +64,15 @@ void put(struct Hashtable *ht, void *key, int key_size_bytes, void *value)
 	ht->size++;
 }
 
-void *get(struct Hashtable *ht, void *key)
+void *get(struct Hashmap *ht, void *key)
 {
 	int index = ht->hash_function(key) % ht->hmax;
 	struct Node *it = ht->buckets[index].head;
 
 	while (it != NULL) {
-		if (ht->compare_function(((struct info *)it->data)->key, key) ==
+		if (ht->compare_function(((struct pair *)it->data)->key, key) ==
 		    0) {
-			return ((struct info *)it->data)->value;
+			return ((struct pair *)it->data)->value;
 		}
 		it = it->next;
 	}
@@ -76,13 +80,13 @@ void *get(struct Hashtable *ht, void *key)
 	return NULL;
 }
 
-int has_key(struct Hashtable *ht, void *key)
+int has_key(struct Hashmap *ht, void *key)
 {
 	int index = ht->hash_function(key) % ht->hmax;
 	struct Node *it = ht->buckets[index].head;
 
 	while (it != NULL) {
-		if (ht->compare_function(((struct info *)it->data)->key, key) ==
+		if (ht->compare_function(((struct pair *)it->data)->key, key) ==
 		    0) {
 			return 1;
 		}
@@ -92,7 +96,7 @@ int has_key(struct Hashtable *ht, void *key)
 	return 0;
 }
 
-void remove_ht_entry(struct Hashtable *ht, void *key)
+void remove_ht_entry(struct Hashmap *ht, void *key)
 {
 	int index;
 	struct Node *tmp;
@@ -101,7 +105,7 @@ void remove_ht_entry(struct Hashtable *ht, void *key)
 	struct Node *it = ht->buckets[index].head;
 	int pozitie = 0;
 	while (it != NULL) {
-		if (ht->compare_function(((struct info *)it->data)->key, key) ==
+		if (ht->compare_function(((struct pair *)it->data)->key, key) ==
 		    0) {
 			break;
 		}
@@ -111,14 +115,14 @@ void remove_ht_entry(struct Hashtable *ht, void *key)
 
 	tmp = remove_nth_node(&ht->buckets[index], pozitie);
 
-	free((((struct info *)tmp->data)->key));
-	free(((struct info *)tmp->data));
+	free((((struct pair *)tmp->data)->key));
+	free(((struct pair *)tmp->data));
 	free(tmp);
 
 	ht->size--;
 }
 
-void free_ht(struct Hashtable *ht)
+void free_ht(struct Hashmap *ht)
 {
 	int i;
 	struct LinkedList *lista_curenta;
@@ -132,8 +136,8 @@ void free_ht(struct Hashtable *ht)
 			tmp = it;
 			it = it->next;
 			tmp->next = NULL;
-			free((((struct info *)tmp->data)->key));
-			free((struct info *)tmp->data);
+			free((((struct pair *)tmp->data)->key));
+			free((struct pair *)tmp->data);
 			free(tmp);
 		}
 	}
@@ -141,7 +145,7 @@ void free_ht(struct Hashtable *ht)
 	free(ht);
 }
 
-int get_ht_size(struct Hashtable *ht)
+int get_ht_size(struct Hashmap *ht)
 {
 	if (ht == NULL) {
 		return -1;
@@ -150,11 +154,38 @@ int get_ht_size(struct Hashtable *ht)
 	return ht->size;
 }
 
-int get_ht_hmax(struct Hashtable *ht)
+int get_ht_hmax(struct Hashmap *ht)
 {
 	if (ht == NULL) {
 		return -1;
 	}
 
 	return ht->hmax;
+}
+
+
+int compare_function_ints(void *a, void *b) {
+    int int_a = *((int *)a);
+    int int_b = *((int *)b);
+
+    if (int_a == int_b) {
+        return 0;
+    } else if (int_a < int_b) {
+        return -1;
+    } else {
+        return 1;
+    }
+}
+
+
+unsigned int hash_function_int(void *a) {
+    /*
+     * Credits: https://stackoverflow.com/a/12996028/7883884
+     */
+    unsigned int uint_a = *((unsigned int *)a);
+
+    uint_a = ((uint_a >> 16u) ^ uint_a) * 0x45d9f3b;
+    uint_a = ((uint_a >> 16u) ^ uint_a) * 0x45d9f3b;
+    uint_a = (uint_a >> 16u) ^ uint_a;
+    return uint_a;
 }

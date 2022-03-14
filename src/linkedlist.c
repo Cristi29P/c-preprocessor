@@ -14,7 +14,6 @@ void add_nth_node(struct LinkedList *list, int n, void *new_data)
 		return;
 	}
 
-	/* n >= list->size inseamna adaugarea unui nou nod la finalul listei. */
 	if (n > list->size) {
 		n = list->size;
 	} else if (n < 0) {
@@ -35,7 +34,6 @@ void add_nth_node(struct LinkedList *list, int n, void *new_data)
 	new_node->data = new_data;
 	new_node->next = curr;
 	if (prev == NULL) {
-		/* Adica n == 0. */
 		list->head = new_node;
 	} else {
 		prev->next = new_node;
@@ -52,12 +50,10 @@ struct Node *remove_nth_node(struct LinkedList *list, int n)
 		return NULL;
 	}
 
-	if (list->head == NULL) { /* Lista este goala. */
+	if (list->head == NULL) {
 		return NULL;
 	}
 
-	/* n >= list->size - 1 inseamna eliminarea nodului de la finalul listei.
-	 */
 	if (n > list->size - 1) {
 		n = list->size - 1;
 	} else if (n < 0) {
@@ -73,7 +69,6 @@ struct Node *remove_nth_node(struct LinkedList *list, int n)
 	}
 
 	if (prev == NULL) {
-		/* Adica n == 0. */
 		list->head = curr->next;
 	} else {
 		prev->next = curr->next;
@@ -86,18 +81,16 @@ struct Node *remove_nth_node(struct LinkedList *list, int n)
 
 int get_size(struct LinkedList *list)
 {
-	if (list == NULL) {
-		return -1;
-	}
-
-	return list->size;
+	return (list == NULL) ? -1 : list->size;
 }
 
 void free_list(struct LinkedList **pp_list)
 {
 	struct Node *currNode;
 
-	if (pp_list == NULL || *pp_list == NULL) {
+	if (pp_list == NULL) {
+		return;
+	} else if (*pp_list == NULL) {
 		return;
 	}
 
@@ -108,21 +101,4 @@ void free_list(struct LinkedList **pp_list)
 
 	free(*pp_list);
 	*pp_list = NULL;
-}
-
-void print_string_linkedlist(struct LinkedList *list)
-{
-	struct Node *curr;
-
-	if (list == NULL) {
-		return;
-	}
-
-	curr = list->head;
-	while (curr != NULL) {
-		printf("%s ", (char *)curr->data);
-		curr = curr->next;
-	}
-
-	printf("\n");
 }

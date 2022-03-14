@@ -4,9 +4,8 @@
 #include "utils.h"
 
 struct Node {
-	void *data; /* Pentru ca datele stocate sa poata avea orice tip, folosim
-		       un pointer la void. */
 	struct Node *next;
+	void *data;
 };
 
 struct LinkedList {
@@ -23,7 +22,5 @@ struct Node *remove_nth_node(struct LinkedList *list, int n);
 int get_size(struct LinkedList *list);
 
 void free_list(struct LinkedList **list);
-
-void print_string_linkedlist(struct LinkedList *list);
 
 #endif /* __LINKEDLIST_H__ */
