@@ -40,9 +40,7 @@ void init_ht(struct Hashmap *ht, int hmax,
 
 void put(struct Hashmap *ht, void *key, int key_size_bytes, void *value)
 {
-	struct pair *info_tmp = (struct pair *)calloc(1, sizeof(struct pair));
-	DIE(info_tmp == NULL, "Memory allocation for info_tmp failed!");
-
+	struct pair *info_tmp;
 	int index = ht->hash_function(key) % ht->hmax;
 	struct Node *it = ht->buckets[index].head;
 
@@ -55,6 +53,8 @@ void put(struct Hashmap *ht, void *key, int key_size_bytes, void *value)
 		it = it->next;
 	}
 
+	info_tmp = (struct pair *)calloc(1, sizeof(struct pair));
+	DIE(info_tmp == NULL, "Memory allocation for info_tmp failed!");
 	info_tmp->key = calloc(key_size_bytes, sizeof(char));
 	DIE(info_tmp->key == NULL,
 	    "Memory allocation for info_tmp->key failed!");
