@@ -2,6 +2,9 @@
 
 int cmp_strings(void *a, void *b) { return strcmp((char *)a, (char *)b); }
 
+/*
+ * Credits: https://stackoverflow.com/a/12996028/7883884
+ */
 unsigned int hash_function_string(void *a)
 {
 	unsigned char *puchar_a = (unsigned char *)a;
@@ -19,24 +22,27 @@ void init_ht(struct Hashmap *ht, int hmax,
 	     unsigned int (*hash_function)(void *),
 	     int (*compare_function)(void *, void *))
 {
+	int i = 0;
 	ht->size = 0;
 	ht->hmax = hmax;
 	ht->hash_function = hash_function;
 	ht->compare_function = compare_function;
 
-	int i;
-
 	ht->buckets =
 	    (struct LinkedList *)calloc(hmax, sizeof(struct LinkedList));
 	DIE(ht->buckets == NULL, "Memory allocation failed for ht->buckets!");
-	for (i = 0; i < hmax; i++) {
+
+	while (i < hmax) {
 		init_list(&ht->buckets[i]);
+		i++;
 	}
 }
 
 void put(struct Hashmap *ht, void *key, int key_size_bytes, void *value)
 {
-	struct pair *info_tmp;
+	struct pair *info_tmp = (struct pair *)calloc(1, sizeof(struct pair));
+	DIE(info_tmp == NULL, "Memory allocation for info_tmp failed!");
+
 	int index = ht->hash_function(key) % ht->hmax;
 	struct Node *it = ht->buckets[index].head;
 
@@ -49,8 +55,6 @@ void put(struct Hashmap *ht, void *key, int key_size_bytes, void *value)
 		it = it->next;
 	}
 
-	info_tmp = (struct pair *)calloc(1, sizeof(struct pair));
-	DIE(info_tmp == NULL, "Memory allocation for info_tmp failed!");
 	info_tmp->key = calloc(key_size_bytes, sizeof(char));
 	DIE(info_tmp->key == NULL,
 	    "Memory allocation for info_tmp->key failed!");
@@ -163,29 +167,29 @@ int get_ht_hmax(struct Hashmap *ht)
 	return ht->hmax;
 }
 
+int compare_function_ints(void *a, void *b)
+{
+	int int_a = *((int *)a);
+	int int_b = *((int *)b);
 
-int compare_function_ints(void *a, void *b) {
-    int int_a = *((int *)a);
-    int int_b = *((int *)b);
-
-    if (int_a == int_b) {
-        return 0;
-    } else if (int_a < int_b) {
-        return -1;
-    } else {
-        return 1;
-    }
+	if (int_a == int_b) {
+		return 0;
+	} else if (int_a < int_b) {
+		return -1;
+	} else {
+		return 1;
+	}
 }
 
+unsigned int hash_function_int(void *a)
+{
+	/*
+	 * Credits: https://stackoverflow.com/a/12996028/7883884
+	 */
+	unsigned int uint_a = *((unsigned int *)a);
 
-unsigned int hash_function_int(void *a) {
-    /*
-     * Credits: https://stackoverflow.com/a/12996028/7883884
-     */
-    unsigned int uint_a = *((unsigned int *)a);
-
-    uint_a = ((uint_a >> 16u) ^ uint_a) * 0x45d9f3b;
-    uint_a = ((uint_a >> 16u) ^ uint_a) * 0x45d9f3b;
-    uint_a = (uint_a >> 16u) ^ uint_a;
-    return uint_a;
+	uint_a = ((uint_a >> 16u) ^ uint_a) * 0x45d9f3b;
+	uint_a = ((uint_a >> 16u) ^ uint_a) * 0x45d9f3b;
+	uint_a = (uint_a >> 16u) ^ uint_a;
+	return uint_a;
 }
