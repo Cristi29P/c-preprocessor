@@ -72,12 +72,11 @@ void *get(struct Hashmap *ht, void *key)
 	int index = ht->hash_function(key) % ht->hmax;
 	struct Node *it = ht->buckets[index].head;
 
-	while (it != NULL) {
+	for (; it != NULL; it = it->next) {
 		if (ht->compare_function(((struct pair *)it->data)->key, key) ==
 		    0) {
 			return ((struct pair *)it->data)->value;
 		}
-		it = it->next;
 	}
 
 	return NULL;
@@ -107,22 +106,19 @@ void remove_ht_entry(struct Hashmap *ht, void *key)
 
 	struct Node *it = ht->buckets[index].head;
 	int pozitie = 0;
-	while (it != NULL) {
+	for (; it != NULL; pozitie++, it = it->next) {
 		if (ht->compare_function(((struct pair *)it->data)->key, key) ==
 		    0) {
 			break;
 		}
-		pozitie++;
-		it = it->next;
 	}
 
 	tmp = remove_nth_node(&ht->buckets[index], pozitie);
+	ht->size--;
 
 	free((((struct pair *)tmp->data)->key));
 	free(((struct pair *)tmp->data));
 	free(tmp);
-
-	ht->size--;
 }
 
 void free_ht(struct Hashmap *ht)
@@ -148,23 +144,9 @@ void free_ht(struct Hashmap *ht)
 	free(ht);
 }
 
-int get_ht_size(struct Hashmap *ht)
-{
-	if (ht == NULL) {
-		return -1;
-	}
+int get_ht_size(struct Hashmap *ht) { return (ht == NULL) ? -1 : ht->size; }
 
-	return ht->size;
-}
-
-int get_ht_hmax(struct Hashmap *ht)
-{
-	if (ht == NULL) {
-		return -1;
-	}
-
-	return ht->hmax;
-}
+int get_ht_hmax(struct Hashmap *ht) { return (ht == NULL) ? -1 : ht->hmax; }
 
 int compare_function_ints(void *a, void *b)
 {
