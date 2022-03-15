@@ -44,13 +44,12 @@ void put(struct Hashmap *ht, void *key, int key_size_bytes, void *value)
 	int index = ht->hash_function(key) % ht->hmax;
 	struct Node *it = ht->buckets[index].head;
 
-	while (it != NULL) {
+	for (; it != NULL; it = it->next) {
 		if (ht->compare_function(((struct pair *)it->data)->key, key) ==
 		    0) {
 			((struct pair *)it->data)->value = value;
 			return;
 		}
-		it = it->next;
 	}
 
 	info_tmp = (struct pair *)calloc(1, sizeof(struct pair));
