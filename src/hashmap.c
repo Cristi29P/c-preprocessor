@@ -38,7 +38,8 @@ void init_ht(struct Hashmap *ht, int hmax,
 	}
 }
 
-void put(struct Hashmap *ht, void *key, int key_size_bytes, void *value)
+void put(struct Hashmap *ht, void *key, int key_size_bytes, void *value,
+	 unsigned int value_size)
 {
 	struct pair *info_tmp;
 	int index = ht->hash_function(key) % ht->hmax;
@@ -59,11 +60,13 @@ void put(struct Hashmap *ht, void *key, int key_size_bytes, void *value)
 	    "Memory allocation for info_tmp->key failed!");
 
 	memcpy(info_tmp->key, key, key_size_bytes);
+	DIE(info_tmp->key == NULL, "Memory allocation for info_tmp->key failed!");
 
-	info_tmp->value = value;
+	mempcy(info_tmp->value, value, value_size);
+	DIE(info_tmp->key == NULL, "Memory allocation for info_tmp->key failed!");
 
 	add_nth_node(&ht->buckets[index], get_size(&ht->buckets[index]),
-		     info_tmp);
+		     info_tmp, sizeof(struct pair));
 	ht->size++;
 }
 
@@ -117,6 +120,7 @@ void remove_ht_entry(struct Hashmap *ht, void *key)
 	ht->size--;
 
 	free((((struct pair *)tmp->data)->key));
+	free((((struct pair *)tmp->data)->value));
 	free(((struct pair *)tmp->data));
 	free(tmp);
 }
@@ -136,6 +140,7 @@ void free_ht(struct Hashmap *ht)
 			it = it->next;
 			tmp->next = NULL;
 			free((((struct pair *)tmp->data)->key));
+			free((((struct pair *)tmp->data)->value));
 			free((struct pair *)tmp->data);
 			free(tmp);
 		}
@@ -147,30 +152,3 @@ void free_ht(struct Hashmap *ht)
 int get_ht_size(struct Hashmap *ht) { return (ht == NULL) ? -1 : ht->size; }
 
 int get_ht_hmax(struct Hashmap *ht) { return (ht == NULL) ? -1 : ht->hmax; }
-
-int compare_function_ints(void *a, void *b)
-{
-	int int_a = *((int *)a);
-	int int_b = *((int *)b);
-
-	if (int_a == int_b) {
-		return 0;
-	} else if (int_a < int_b) {
-		return -1;
-	} else {
-		return 1;
-	}
-}
-
-unsigned int hash_function_int(void *a)
-{
-	/*
-	 * Credits: https://stackoverflow.com/a/12996028/7883884
-	 */
-	unsigned int uint_a = *((unsigned int *)a);
-
-	uint_a = ((uint_a >> 16u) ^ uint_a) * 0x45d9f3b;
-	uint_a = ((uint_a >> 16u) ^ uint_a) * 0x45d9f3b;
-	uint_a = (uint_a >> 16u) ^ uint_a;
-	return uint_a;
-}

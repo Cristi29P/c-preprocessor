@@ -20,7 +20,7 @@ void init_ht(struct Hashmap *ht, int hmax,
 	     unsigned int (*hash_function)(void *),
 	     int (*compare_function)(void *, void *));
 
-void put(struct Hashmap *ht, void *key, int key_size_bytes, void *value);
+void put(struct Hashmap *ht, void *key, int key_size_bytes, void *value, unsigned int value_size);
 
 void *get(struct Hashmap *ht, void *key);
 
@@ -37,11 +37,5 @@ void free_ht(struct Hashmap *ht);
 int cmp_strings(void *a, void *b);
 
 unsigned int hash_function_string(void *a);
-
-
-unsigned int hash_function_int(void *a);
-
-int compare_function_ints(void *a, void *b);
-
 
 #endif /* HASHMAP_H__ */
