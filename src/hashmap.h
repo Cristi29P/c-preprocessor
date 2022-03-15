@@ -1,5 +1,5 @@
-#ifndef __HASHMAP_H__
-#define __HASHMAP_H__
+#ifndef HASHMAP_H__
+#define HASHMAP_H__
 
 #include "linkedlist.h"
 
@@ -44,4 +44,4 @@ unsigned int hash_function_int(void *a);
 int compare_function_ints(void *a, void *b);
 
 
-#endif /* __HASHMAP_H__ */
+#endif /* HASHMAP_H__ */

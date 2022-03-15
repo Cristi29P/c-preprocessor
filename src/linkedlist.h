@@ -1,5 +1,5 @@
-#ifndef __LINKEDLIST_H__
-#define __LINKEDLIST_H__
+#ifndef LINKEDLIST_H__
+#define LINKEDLIST_H__
 
 #include "utils.h"
 
@@ -23,4 +23,4 @@ int get_size(struct LinkedList *list);
 
 void free_list(struct LinkedList **list);
 
-#endif /* __LINKEDLIST_H__ */
+#endif /* LINKEDLIST_H__ */
