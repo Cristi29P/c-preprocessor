@@ -55,7 +55,7 @@ void put(struct Hashmap *ht, void *key, int key_size_bytes, void *value,
 
 	info_tmp = (struct pair *)calloc(1, sizeof(struct pair));
 	DIE(info_tmp == NULL, "Memory allocation for info_tmp failed!");
-	info_tmp->key = calloc(key_size_bytes, sizeof(char));
+	info_tmp->key = calloc(1, key_size_bytes);
 	DIE(info_tmp->key == NULL,
 	    "Memory allocation for info_tmp->key failed!");
 
