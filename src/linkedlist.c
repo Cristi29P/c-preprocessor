@@ -6,7 +6,8 @@ void init_list(struct LinkedList *list)
 	list->size = 0;
 }
 
-void add_nth_node(struct LinkedList *list, int n, void *new_data)
+void add_nth_node(struct LinkedList *list, int n, void *new_data,
+		  unsigned int new_data_size)
 {
 	struct Node *prev, *curr, *new_node;
 
@@ -28,7 +29,13 @@ void add_nth_node(struct LinkedList *list, int n, void *new_data)
 	DIE(new_node == NULL, "Memory allocation for the new_node failed!");
 
 	new_node->next = curr;
-	new_node->data = new_data;
+
+	new_node->data = calloc(new_data_size, sizeof(char));
+	DIE(new_node->data == NULL, "Memory allocation for the new_node->data failed!");
+
+	memcpy(new_node->data, new_data, new_data_size);
+	DIE(new_node->data == NULL, "Memcpy failed for the new_node->data!");
+
 	list->size++;
 
 	if (prev == NULL) {
@@ -38,7 +45,7 @@ void add_nth_node(struct LinkedList *list, int n, void *new_data)
 	}
 }
 
-struct Node *remove_nth_node(struct LinkedList *list, int n)
+void remove_nth_node(struct LinkedList *list, int n)
 {
 	struct Node *prev, *curr;
 
@@ -69,7 +76,8 @@ struct Node *remove_nth_node(struct LinkedList *list, int n)
 		prev->next = curr->next;
 	}
 
-	return curr;
+	free(curr->data);
+	free(curr);
 }
 
 int get_size(struct LinkedList *list)
@@ -79,8 +87,6 @@ int get_size(struct LinkedList *list)
 
 void free_list(struct LinkedList **pp_list)
 {
-	struct Node *currNode;
-
 	if (pp_list == NULL) {
 		return;
 	}
@@ -90,8 +96,7 @@ void free_list(struct LinkedList **pp_list)
 	}
 
 	for (; get_size(*pp_list) > 0;) {
-		currNode = remove_nth_node(*pp_list, 0);
-		free(currNode);
+		remove_nth_node(*pp_list, 0);
 	}
 
 	free(*pp_list);
