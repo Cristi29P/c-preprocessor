@@ -49,37 +49,38 @@ void put(struct Hashmap *ht, void *key, int key_size_bytes, void *value,
 	for (; it != NULL; it = it->next) {
 		if (ht->compare_function(((struct pair *)it->data)->key, key) ==
 		    0) {
-			
+
 			free((((struct pair *)it->data)->key));
 			free((((struct pair *)it->data)->value));
 			free(it->data);
-			
+
 			it->data = calloc(1, sizeof(struct pair));
-			DIE(it->data == NULL, "Memory allocation for the new_node->data failed!");
+			DIE(it->data == NULL,
+			    "Memory allocation for the new_node->data failed!");
 
-			((struct pair *)it->data)->key = calloc(1, key_size_bytes);
+			((struct pair *)it->data)->key =
+			    calloc(1, key_size_bytes);
 			DIE(((struct pair *)it->data)->key == NULL,
-				"Memory allocation for info_tmp->key failed!");
+			    "Memory allocation for info_tmp->key failed!");
 
-			memcpy(((struct pair *)it->data)->key, key, key_size_bytes);
+			memcpy(((struct pair *)it->data)->key, key,
+			       key_size_bytes);
 			DIE(((struct pair *)it->data)->key == NULL,
-				"Memory allocation for info_tmp->key failed!");
+			    "Memory allocation for info_tmp->key failed!");
 
-			((struct pair *)it->data)->value = calloc(1, value_size);
+			((struct pair *)it->data)->value =
+			    calloc(1, value_size);
 			DIE(((struct pair *)it->data)->value == NULL,
-				"Memory allocation for info_tmp->key failed!");
+			    "Memory allocation for info_tmp->key failed!");
 
-			memcpy(((struct pair *)it->data)->value, value, value_size);
+			memcpy(((struct pair *)it->data)->value, value,
+			       value_size);
 			DIE(((struct pair *)it->data)->value == NULL,
-				"Memory allocation for info_tmp->key failed!");
+			    "Memory allocation for info_tmp->key failed!");
 
-			
 			return;
 		}
 	}
-
-	// info_tmp = (struct pair *)calloc(1, sizeof(struct pair));
-	// DIE(info_tmp == NULL, "Memory allocation for info_tmp failed!");
 
 	info_tmp.key = calloc(1, key_size_bytes);
 	DIE(info_tmp.key == NULL,
@@ -99,6 +100,7 @@ void put(struct Hashmap *ht, void *key, int key_size_bytes, void *value,
 
 	add_nth_node(&ht->buckets[index], get_size(&ht->buckets[index]),
 		     &info_tmp, sizeof(struct pair));
+
 	ht->size++;
 }
 
@@ -122,12 +124,11 @@ int has_key(struct Hashmap *ht, void *key)
 	int index = ht->hash_function(key) % ht->hmax;
 	struct Node *it = ht->buckets[index].head;
 
-	while (it != NULL) {
+	for (;it != NULL; it = it->next) {
 		if (ht->compare_function(((struct pair *)it->data)->key, key) ==
 		    0) {
 			return 1;
 		}
-		it = it->next;
 	}
 
 	return 0;
@@ -135,12 +136,9 @@ int has_key(struct Hashmap *ht, void *key)
 
 void remove_ht_entry(struct Hashmap *ht, void *key)
 {
-	int index;
-	struct Node *tmp;
-	index = ht->hash_function(key) % ht->hmax;
+	int index = ht->hash_function(key) % ht->hmax, pozitie = 0;
+	struct Node *tmp, *it = ht->buckets[index].head; 
 
-	struct Node *it = ht->buckets[index].head;
-	int pozitie = 0;
 	for (; it != NULL; pozitie++, it = it->next) {
 		if (ht->compare_function(((struct pair *)it->data)->key, key) ==
 		    0) {
@@ -153,10 +151,6 @@ void remove_ht_entry(struct Hashmap *ht, void *key)
 
 	free((((struct pair *)tmp->data)->key));
 	free((((struct pair *)tmp->data)->value));
-	// free(((struct pair *)tmp->data));
-	// free(tmp);
-
-
 	free(tmp->data);
 	free(tmp);
 }
@@ -171,14 +165,12 @@ void free_ht(struct Hashmap *ht)
 		lista_curenta = &ht->buckets[i];
 		it = lista_curenta->head;
 
-		while (it != NULL) {
+		for (; it != NULL;) {
 			tmp = it;
 			it = it->next;
 			tmp->next = NULL;
 			free((((struct pair *)tmp->data)->key));
 			free((((struct pair *)tmp->data)->value));
-			// free((struct pair *)tmp->data);
-			
 			free(tmp->data);
 			free(tmp);
 		}
