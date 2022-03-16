@@ -2,6 +2,7 @@
 #define HASHMAP_H__
 
 #include "linkedlist.h"
+#include "utils.h"
 
 struct pair {
 	void *key;

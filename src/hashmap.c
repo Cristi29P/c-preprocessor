@@ -1,4 +1,5 @@
 #include "hashmap.h"
+#include "linkedlist.h"
 
 int cmp_strings(void *a, void *b) { return strcmp((char *)a, (char *)b); }
 
@@ -41,32 +42,63 @@ void init_ht(struct Hashmap *ht, int hmax,
 void put(struct Hashmap *ht, void *key, int key_size_bytes, void *value,
 	 unsigned int value_size)
 {
-	struct pair *info_tmp;
+	struct pair info_tmp;
 	int index = ht->hash_function(key) % ht->hmax;
 	struct Node *it = ht->buckets[index].head;
 
 	for (; it != NULL; it = it->next) {
 		if (ht->compare_function(((struct pair *)it->data)->key, key) ==
 		    0) {
-			((struct pair *)it->data)->value = value;
+			
+			free((((struct pair *)it->data)->key));
+			free((((struct pair *)it->data)->value));
+			free(it->data);
+			
+			it->data = calloc(1, sizeof(struct pair));
+			DIE(it->data == NULL, "Memory allocation for the new_node->data failed!");
+
+			((struct pair *)it->data)->key = calloc(1, key_size_bytes);
+			DIE(((struct pair *)it->data)->key == NULL,
+				"Memory allocation for info_tmp->key failed!");
+
+			memcpy(((struct pair *)it->data)->key, key, key_size_bytes);
+			DIE(((struct pair *)it->data)->key == NULL,
+				"Memory allocation for info_tmp->key failed!");
+
+			((struct pair *)it->data)->value = calloc(1, value_size);
+			DIE(((struct pair *)it->data)->value == NULL,
+				"Memory allocation for info_tmp->key failed!");
+
+			memcpy(((struct pair *)it->data)->value, value, value_size);
+			DIE(((struct pair *)it->data)->value == NULL,
+				"Memory allocation for info_tmp->key failed!");
+
+			
 			return;
 		}
 	}
 
-	info_tmp = (struct pair *)calloc(1, sizeof(struct pair));
-	DIE(info_tmp == NULL, "Memory allocation for info_tmp failed!");
-	info_tmp->key = calloc(1, key_size_bytes);
-	DIE(info_tmp->key == NULL,
+	// info_tmp = (struct pair *)calloc(1, sizeof(struct pair));
+	// DIE(info_tmp == NULL, "Memory allocation for info_tmp failed!");
+
+	info_tmp.key = calloc(1, key_size_bytes);
+	DIE(info_tmp.key == NULL,
 	    "Memory allocation for info_tmp->key failed!");
 
-	memcpy(info_tmp->key, key, key_size_bytes);
-	DIE(info_tmp->key == NULL, "Memory allocation for info_tmp->key failed!");
+	memcpy(info_tmp.key, key, key_size_bytes);
+	DIE(info_tmp.key == NULL,
+	    "Memory allocation for info_tmp->key failed!");
 
-	mempcy(info_tmp->value, value, value_size);
-	DIE(info_tmp->key == NULL, "Memory allocation for info_tmp->key failed!");
+	info_tmp.value = calloc(1, value_size);
+	DIE(info_tmp.value == NULL,
+	    "Memory allocation for info_tmp->key failed!");
+
+	memcpy(info_tmp.value, value, value_size);
+	DIE(info_tmp.value == NULL,
+	    "Memory allocation for info_tmp->key failed!");
 
 	add_nth_node(&ht->buckets[index], get_size(&ht->buckets[index]),
-		     info_tmp, sizeof(struct pair));
+		     &info_tmp, sizeof(struct pair));
 	ht->size++;
 }
 
@@ -121,7 +153,11 @@ void remove_ht_entry(struct Hashmap *ht, void *key)
 
 	free((((struct pair *)tmp->data)->key));
 	free((((struct pair *)tmp->data)->value));
-	free(((struct pair *)tmp->data));
+	// free(((struct pair *)tmp->data));
+	// free(tmp);
+
+
+	free(tmp->data);
 	free(tmp);
 }
 
@@ -141,7 +177,9 @@ void free_ht(struct Hashmap *ht)
 			tmp->next = NULL;
 			free((((struct pair *)tmp->data)->key));
 			free((((struct pair *)tmp->data)->value));
-			free((struct pair *)tmp->data);
+			// free((struct pair *)tmp->data);
+			
+			free(tmp->data);
 			free(tmp);
 		}
 	}
