@@ -124,7 +124,7 @@ int has_key(struct Hashmap *ht, void *key)
 	int index = ht->hash_function(key) % ht->hmax;
 	struct Node *it = ht->buckets[index].head;
 
-	for (;it != NULL; it = it->next) {
+	for (; it != NULL; it = it->next) {
 		if (ht->compare_function(((struct pair *)it->data)->key, key) ==
 		    0) {
 			return 1;
@@ -137,7 +137,7 @@ int has_key(struct Hashmap *ht, void *key)
 void remove_ht_entry(struct Hashmap *ht, void *key)
 {
 	int index = ht->hash_function(key) % ht->hmax, pozitie = 0;
-	struct Node *tmp, *it = ht->buckets[index].head; 
+	struct Node *tmp, *it = ht->buckets[index].head;
 
 	for (; it != NULL; pozitie++, it = it->next) {
 		if (ht->compare_function(((struct pair *)it->data)->key, key) ==

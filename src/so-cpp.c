@@ -7,19 +7,30 @@
 void add_cmd_define(struct Hashmap *mappings, char *argv)
 {
 	char symbol[SMALL_BUFF] = {'\0'}, value[SMALL_BUFF] = {'\0'};
-	sscanf(argv, "%[^=]=%s", symbol, value);
+	int rv;
+
+	rv = sscanf(argv, "%[^=]=%s", symbol, value);
+	if (rv <= 0) {
+		printf("Sscanf failed!\n");
+	}
 	put(mappings, symbol, strlen(symbol) + 1, value, strlen(value) + 1);
 }
 
 void add_cmd_directory(struct LinkedList *directories, char *argv)
 {
 	char directory[PATH_LENGTH] = {'\0'};
-	sscanf(argv, "%s", directory);
+	int rv;
+
+	rv = sscanf(argv, "%s", directory);
+	if (rv < 0) {
+		printf("Sscanf failed!\n");
+	}
 	add_nth_node(directories, get_size(directories), directory,
 		     strlen(directory) + 1);
 }
 
-int check_param(char *argv) {
+int check_param(char *argv)
+{
 	if (strncmp(argv, "-D", 2) || strncmp(argv, "-I", 2)) {
 		return -1;
 	}
@@ -27,8 +38,8 @@ int check_param(char *argv) {
 }
 
 int parse_cmd_arguments(struct Hashmap *mappings,
-			 struct LinkedList *directories, char *infile,
-			 char *outfile, char *argv[], int argc)
+			struct LinkedList *directories, char *infile,
+			char *outfile, char *argv[], int argc)
 {
 	int input_set = 0;
 	for (int i = 1; i < argc; i++) {
@@ -76,30 +87,43 @@ int main(int argc, char *argv[])
 	char infile[PATH_LENGTH] = {'\0'}, outfile[PATH_LENGTH] = {'\0'};
 	struct LinkedList *directories =
 	    (struct LinkedList *)calloc(1, sizeof(struct LinkedList));
+
+	if (directories == NULL) {
+		exit(ENOMEM);
+	}
 	struct Hashmap *mappings =
 	    (struct Hashmap *)calloc(1, sizeof(struct Hashmap));
-	// Verificat si intors codul de eroare daca esueaza calloc-ul
+
+	if (mappings == NULL) {
+		exit(ENOMEM);
+	}
 
 	init_list(directories);
 	init_ht(mappings, HT_ENTRIES, hash_function_string, cmp_strings);
 
-	rv = parse_cmd_arguments(mappings, directories, infile, outfile, argv, argc);
+	rv = parse_cmd_arguments(mappings, directories, infile, outfile, argv,
+				 argc);
 	if (rv) {
 		free_list(&directories);
 		free_ht(mappings);
-		return -1; // return 12?
+		exit(ENOMEM);
 	}
 
-	printf("HT->SIZE: %d\n", get_ht_size(mappings));
+	FILE *f;
+	f = fopen(infile, "r");
+	if (f == NULL) {
+		free_list(&directories);
+		free_ht(mappings);
+		exit(ENOMEM);
+	}
 
-	char *rc = get(mappings, "CUSTOM_DBG");
-	printf("--%s--\n", rc);
-
-	printf("INFILE: --%s--\n", infile);
-	printf("OUTFILE: --%s--\n", outfile);
-
-	printf("DIRECTORIES: ");
-	print_string_linkedlist(directories);
+	// printf("HT->SIZE: %d\n", get_ht_size(mappings));
+	// char *rc = get(mappings, "CUSTOM_DBG");
+	// printf("--%s--\n", rc);
+	// printf("INFILE: --%s--\n", infile);
+	// printf("OUTFILE: --%s--\n", outfile);
+	// printf("DIRECTORIES: ");
+	// print_string_linkedlist(directories);
 
 	free_list(&directories);
 	free_ht(mappings);

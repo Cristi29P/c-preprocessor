@@ -13,15 +13,16 @@ struct Hashmap {
 	struct LinkedList *buckets;
 	int size;
 	int hmax;
-	unsigned int (*hash_function)(void *);
-	int (*compare_function)(void *, void *);
+	unsigned int (*hash_function)(void *arg);
+	int (*compare_function)(void *arg1, void *arg2);
 };
 
 void init_ht(struct Hashmap *ht, int hmax,
 	     unsigned int (*hash_function)(void *),
 	     int (*compare_function)(void *, void *));
 
-void put(struct Hashmap *ht, void *key, int key_size_bytes, void *value, unsigned int value_size);
+void put(struct Hashmap *ht, void *key, int key_size_bytes, void *value,
+	 unsigned int value_size);
 
 void *get(struct Hashmap *ht, void *key);
 
