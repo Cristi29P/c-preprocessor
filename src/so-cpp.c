@@ -11,33 +11,35 @@ void add_cmd_define(struct Hashmap *mappings, char *argv)
 	put(mappings, symbol, strlen(symbol) + 1, value, strlen(value) + 1);
 }
 
-void add_cmd_directory(struct LinkedList *directories, char *argv) {
+void add_cmd_directory(struct LinkedList *directories, char *argv)
+{
 	char directory[PATH_LENGTH] = {'\0'};
 	sscanf(argv, "%s", directory);
-	add_nth_node(directories, get_size(directories), directory, strlen(directory) + 1);
+	add_nth_node(directories, get_size(directories), directory,
+		     strlen(directory) + 1);
 }
 
-void parse_cmd_defines(char *argv[], int argc, struct Hashmap *mappings)
+void parse_cmd_arguments(struct Hashmap *mappings,
+			 struct LinkedList *directories, char *infile,
+			 char *outfile, char *argv[], int argc)
 {
+	int input_set = 0;
 	for (int i = 1; i < argc; i++) {
 		if (!strncmp(argv[i], "-D", 2) && strlen(argv[i]) == 2) {
 			i++; /*inaintez la urmatorul argument*/
 			add_cmd_define(mappings, argv[i]);
 		} else if (!strncmp(argv[i], "-D", 2) && strlen(argv[i]) > 2) {
 			add_cmd_define(mappings, argv[i] + 2);
-		}
-	}
-}
-
-void parse_cmd_directories(char *argv[], int argc,
-			   struct LinkedList *directories)
-{
-	for (int i = 1; i < argc; i++) {
-		if (!strncmp(argv[i], "-I", 2) && strlen(argv[i]) == 2) {
+		} else if (!strncmp(argv[i], "-I", 2) && strlen(argv[i]) == 2) {
 			i++; /*inaintez la urmatorul argument*/
 			add_cmd_directory(directories, argv[i]);
 		} else if (!strncmp(argv[i], "-I", 2) && strlen(argv[i]) > 2) {
 			add_cmd_directory(directories, argv[i] + 2);
+		} else if (!input_set) {
+			strncpy(infile, argv[i], PATH_LENGTH);
+			input_set = 1;
+		} else if ((input_set == 1) && (i == argc - 1)) {
+			strncpy(outfile, argv[i], PATH_LENGTH);
 		}
 	}
 }
@@ -70,17 +72,20 @@ int main(int argc, char *argv[])
 	init_list(directories);
 	init_ht(mappings, HT_ENTRIES, hash_function_string, cmp_strings);
 
-	parse_cmd_defines(argv, argc, mappings);
-	parse_cmd_directories(argv, argc, directories);
-	
+	// parse_cmd_defines(argv, argc, mappings);
+	// parse_cmd_directories(argv, argc, directories);
+	parse_cmd_arguments(mappings, directories, infile, outfile, argv, argc);
+
+	printf("HT->SIZE: %d\n", get_ht_size(mappings));
+
+	char *rc = get(mappings, "CUSTOM_DBG");
+	printf("--%s--\n", rc);
+
+	printf("INFILE: --%s--\n", infile);
+	printf("OUTFILE: --%s--\n", outfile);
+
+	printf("DIRECTORIES: ");
 	print_string_linkedlist(directories);
-
-	char *ret = get(mappings, "DEBUG");
-	printf("Value: ---%s---\n", ret);
-
-	ret = get(mappings, "CUSTOM_DBG");
-	printf("Value: ---%s---\n", ret);
-
 
 	free_list(&directories);
 	free_ht(mappings);
