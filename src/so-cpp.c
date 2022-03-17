@@ -19,7 +19,14 @@ void add_cmd_directory(struct LinkedList *directories, char *argv)
 		     strlen(directory) + 1);
 }
 
-void parse_cmd_arguments(struct Hashmap *mappings,
+int check_param(char *argv) {
+	if (strncmp(argv, "-D", 2) || strncmp(argv, "-I", 2)) {
+		return -1;
+	}
+	return 0;
+}
+
+int parse_cmd_arguments(struct Hashmap *mappings,
 			 struct LinkedList *directories, char *infile,
 			 char *outfile, char *argv[], int argc)
 {
@@ -40,8 +47,11 @@ void parse_cmd_arguments(struct Hashmap *mappings,
 			input_set = 1;
 		} else if ((input_set == 1) && (i == argc - 1)) {
 			strncpy(outfile, argv[i], PATH_LENGTH);
+		} else if (check_param(argv[i])) {
+			return -1;
 		}
 	}
+	return 0;
 }
 
 void print_string_linkedlist(struct LinkedList *list)
@@ -62,6 +72,7 @@ void print_string_linkedlist(struct LinkedList *list)
 
 int main(int argc, char *argv[])
 {
+	int rv;
 	char infile[PATH_LENGTH] = {'\0'}, outfile[PATH_LENGTH] = {'\0'};
 	struct LinkedList *directories =
 	    (struct LinkedList *)calloc(1, sizeof(struct LinkedList));
@@ -72,9 +83,12 @@ int main(int argc, char *argv[])
 	init_list(directories);
 	init_ht(mappings, HT_ENTRIES, hash_function_string, cmp_strings);
 
-	// parse_cmd_defines(argv, argc, mappings);
-	// parse_cmd_directories(argv, argc, directories);
-	parse_cmd_arguments(mappings, directories, infile, outfile, argv, argc);
+	rv = parse_cmd_arguments(mappings, directories, infile, outfile, argv, argc);
+	if (rv) {
+		free_list(&directories);
+		free_ht(mappings);
+		return -1; // return 12?
+	}
 
 	printf("HT->SIZE: %d\n", get_ht_size(mappings));
 
