@@ -14,4 +14,4 @@ hashmap.o: hashmap.c
 .PHONY: clean
 
 clean:
-	rm -f *.o *~ test so-cpp
+	rm -f *.o *~ so-cpp
