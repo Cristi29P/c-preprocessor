@@ -79,14 +79,36 @@ int parse_cmd_arguments(struct Hashmap *mappings,
 	return 0;
 }
 
+
+void replace_str(char *haystack, char *needle, char *replc)
+{
+	char start[256], end[256], *last_pos;
+	size_t l_origLen;
+
+	l_origLen = strnlen(needle, 256);
+	while ((last_pos = strstr(haystack, needle))) {
+		memset(start, '\0', 256);
+		memset(end, '\0', 256);
+
+		memcpy(start, haystack,
+		       (long unsigned int)(last_pos - haystack));
+		memcpy(end, last_pos + l_origLen, strlen(last_pos + l_origLen));
+
+		sprintf(haystack, "%s%s%s", start, replc, end);
+	}
+}
+
 void add_simple_define(struct Hashmap *mappings, char *buffer) {
 	char symbol[SMALL_BUFF] = {'\0'}, value[SMALL_BUFF] = {'\0'};
-	char value_copy[SMALL_BUFF] = {'\0'};
+	char value_copy[MAX_BUFF_SIZE] = {'\0'};
 
 	sscanf(buffer, "#define %s %[^\n]s", symbol, value);
 	strncpy(value_copy, value, SMALL_BUFF);
 
 	// trebuie tokenizata valoarea
+	// 1) tokenizez
+	// 2) daca tokenul apare in hashmap, atunci inlocuiesc in string tokenul cu valoarea din hashmap
+	// 3) la final
 
 }
 
