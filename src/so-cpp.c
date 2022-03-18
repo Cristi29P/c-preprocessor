@@ -1,18 +1,21 @@
 #include "hashmap.h"
 // Refacut makefile si includes
+// Inlocuit functii periculoase cu altele
+// REMOVE SSCANF CHECKS
+
 #define PATH_LENGTH 50
 #define SMALL_BUFF 20
 #define HT_ENTRIES 1000
+#define MAX_BUFF_SIZE 256
 
 int file_exists(const char *name)
 {
-    FILE *file = fopen(name, "r");
-    if (name)
-    {
-        fclose(file);
-        return 1;
-    }
-    return 0;
+	FILE *file = fopen(name, "r");
+	if (name) {
+		fclose(file);
+		return 1;
+	}
+	return 0;
 }
 
 void add_cmd_define(struct Hashmap *mappings, char *argv)
@@ -76,6 +79,41 @@ int parse_cmd_arguments(struct Hashmap *mappings,
 	return 0;
 }
 
+void add_simple_define(struct Hashmap *mappings, char *buffer) {
+	char symbol[SMALL_BUFF] = {'\0'}, value[SMALL_BUFF] = {'\0'};
+	char value_copy[SMALL_BUFF] = {'\0'};
+
+	sscanf(buffer, "#define %s %[^\n]s", symbol, value);
+	strncpy(value_copy, value, SMALL_BUFF);
+
+	// trebuie tokenizata valoarea
+
+}
+
+void add_text_define(struct Hashmap *mappings, FILE *infile, char *buffer) {
+	if (buffer[strlen(buffer) - 1] == '\\') {
+		// execute multi-line define procedure
+	} else {
+		add_simple_define(mappings, buffer);
+	}
+}
+
+void parse_file(struct Hashmap *mappings, struct LinkedList *directories,
+		FILE *infile, FILE *outfile)
+{
+	char buffer[MAX_BUFF_SIZE] = {'\0'};
+
+	while (fgets(buffer, MAX_BUFF_SIZE, infile)) {
+		if (!strncmp(buffer, "#define", 7)) {
+			add_text_define(mappings, infile, buffer);
+		} else {
+			printf("%s", buffer);
+		}
+		// prelucrare si afisare restul de siruri in fisier sau la iesirea standard
+	}
+
+}
+
 void print_string_linkedlist(struct LinkedList *list)
 {
 	struct Node *curr;
@@ -96,7 +134,7 @@ int main(int argc, char *argv[])
 {
 	int rv;
 	char infile[PATH_LENGTH] = {'\0'}, outfile[PATH_LENGTH] = {'\0'};
-	FILE *input_file, *output_file; 
+	FILE *input_file, *output_file;
 
 	struct LinkedList *directories =
 	    (struct LinkedList *)calloc(1, sizeof(struct LinkedList));
@@ -124,6 +162,7 @@ int main(int argc, char *argv[])
 		exit(ENOMEM);
 	}
 
+	/*Opening and checking the input/output files*/
 	if (strlen(infile)) {
 		input_file = fopen(infile, "r");
 		if (input_file == NULL) {
@@ -142,15 +181,13 @@ int main(int argc, char *argv[])
 			free_list(&directories);
 			free_ht(mappings);
 			exit(ENOMEM);
-		}	
+		}
 	} else {
 		output_file = stdout;
 	}
+	/*Finished the checking phase*/
 
-	
-
-
-
+	parse_file(mappings, directories, input_file, output_file);
 
 
 
@@ -158,6 +195,19 @@ int main(int argc, char *argv[])
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+	/*Memory clean-up*/
 	fclose(input_file);
 	fclose(output_file);
 	free_list(&directories);
