@@ -79,7 +79,6 @@ int parse_cmd_arguments(struct Hashmap *mappings,
 	return 0;
 }
 
-
 void replace_str(char *haystack, char *needle, char *replc)
 {
 	char start[256], end[256], *last_pos;
@@ -98,21 +97,29 @@ void replace_str(char *haystack, char *needle, char *replc)
 	}
 }
 
-void add_simple_define(struct Hashmap *mappings, char *buffer) {
+void add_simple_define(struct Hashmap *mappings, char *buffer)
+{
 	char symbol[SMALL_BUFF] = {'\0'}, value[SMALL_BUFF] = {'\0'};
 	char value_copy[MAX_BUFF_SIZE] = {'\0'};
+	char *delim = "\t []{}<>=+-*/%!&|^.,:;()\\", *token;
 
 	sscanf(buffer, "#define %s %[^\n]s", symbol, value);
 	strncpy(value_copy, value, SMALL_BUFF);
 
-	// trebuie tokenizata valoarea
-	// 1) tokenizez
-	// 2) daca tokenul apare in hashmap, atunci inlocuiesc in string tokenul cu valoarea din hashmap
-	// 3) la final
+	token = strtok(value, delim);
+	while (token != NULL) {
+		if (has_key(mappings, token)) {
+			replace_str(value_copy, token, get(mappings, token));
+		}
+		token = strtok(NULL, delim);	
+	}
 
+	put(mappings, symbol, strnlen(symbol, SMALL_BUFF) + 1, value_copy,
+	    strnlen(value_copy, MAX_BUFF_SIZE) + 1);
 }
 
-void add_text_define(struct Hashmap *mappings, FILE *infile, char *buffer) {
+void add_text_define(struct Hashmap *mappings, FILE *infile, char *buffer)
+{
 	if (buffer[strlen(buffer) - 1] == '\\') {
 		// execute multi-line define procedure
 	} else {
@@ -131,9 +138,9 @@ void parse_file(struct Hashmap *mappings, struct LinkedList *directories,
 		} else {
 			printf("%s", buffer);
 		}
-		// prelucrare si afisare restul de siruri in fisier sau la iesirea standard
+		// prelucrare si afisare restul de siruri in fisier sau la
+		// iesirea standard
 	}
-
 }
 
 void print_string_linkedlist(struct LinkedList *list)
@@ -210,23 +217,9 @@ int main(int argc, char *argv[])
 	/*Finished the checking phase*/
 
 	parse_file(mappings, directories, input_file, output_file);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	printf("Value: --%s--\n", (char *)get(mappings, "ABC"));
+	printf("Value: --%s--\n", (char *)get(mappings, "Salut"));
+	printf("Value: --%s--\n", (char *)get(mappings, "GREP"));
 
 
 	/*Memory clean-up*/
