@@ -4,6 +4,17 @@
 #define SMALL_BUFF 20
 #define HT_ENTRIES 1000
 
+int file_exists(const char *name)
+{
+    FILE *file = fopen(name, "r");
+    if (name)
+    {
+        fclose(file);
+        return 1;
+    }
+    return 0;
+}
+
 void add_cmd_define(struct Hashmap *mappings, char *argv)
 {
 	char symbol[SMALL_BUFF] = {'\0'}, value[SMALL_BUFF] = {'\0'};
@@ -85,12 +96,15 @@ int main(int argc, char *argv[])
 {
 	int rv;
 	char infile[PATH_LENGTH] = {'\0'}, outfile[PATH_LENGTH] = {'\0'};
+	FILE *input_file, *output_file; 
+
 	struct LinkedList *directories =
 	    (struct LinkedList *)calloc(1, sizeof(struct LinkedList));
 
 	if (directories == NULL) {
 		exit(ENOMEM);
 	}
+
 	struct Hashmap *mappings =
 	    (struct Hashmap *)calloc(1, sizeof(struct Hashmap));
 
@@ -101,6 +115,7 @@ int main(int argc, char *argv[])
 	init_list(directories);
 	init_ht(mappings, HT_ENTRIES, hash_function_string, cmp_strings);
 
+	/*Parse cmd line arguments and check if there is any invalid falig*/
 	rv = parse_cmd_arguments(mappings, directories, infile, outfile, argv,
 				 argc);
 	if (rv) {
@@ -109,22 +124,42 @@ int main(int argc, char *argv[])
 		exit(ENOMEM);
 	}
 
-	FILE *f;
-	f = fopen(infile, "r");
-	if (f == NULL) {
-		free_list(&directories);
-		free_ht(mappings);
-		exit(ENOMEM);
+	if (strlen(infile)) {
+		input_file = fopen(infile, "r");
+		if (input_file == NULL) {
+			free_list(&directories);
+			free_ht(mappings);
+			exit(ENOMEM);
+		}
+	} else {
+		input_file = stdin;
 	}
 
-	// printf("HT->SIZE: %d\n", get_ht_size(mappings));
-	// char *rc = get(mappings, "CUSTOM_DBG");
-	// printf("--%s--\n", rc);
-	// printf("INFILE: --%s--\n", infile);
-	// printf("OUTFILE: --%s--\n", outfile);
-	// printf("DIRECTORIES: ");
-	// print_string_linkedlist(directories);
+	if (strlen(outfile)) {
+		output_file = fopen(outfile, "w");
+		if (output_file == NULL) {
+			fclose(input_file);
+			free_list(&directories);
+			free_ht(mappings);
+			exit(ENOMEM);
+		}	
+	} else {
+		output_file = stdout;
+	}
 
+	
+
+
+
+
+
+
+
+
+
+
+	fclose(input_file);
+	fclose(output_file);
 	free_list(&directories);
 	free_ht(mappings);
 
