@@ -5,7 +5,7 @@
 
 #define PATH_LENGTH 50
 #define SMALL_BUFF 20
-#define HT_ENTRIES 1000
+#define HT_ENTRIES 100
 #define MAX_BUFF_SIZE 256
 
 int file_exists(const char *name)
@@ -111,7 +111,7 @@ void add_simple_define(struct Hashmap *mappings, char *buffer)
 		if (has_key(mappings, token)) {
 			replace_str(value_copy, token, get(mappings, token));
 		}
-		token = strtok(NULL, delim);	
+		token = strtok(NULL, delim);
 	}
 
 	put(mappings, symbol, strnlen(symbol, SMALL_BUFF) + 1, value_copy,
@@ -220,7 +220,6 @@ int main(int argc, char *argv[])
 	printf("Value: --%s--\n", (char *)get(mappings, "ABC"));
 	printf("Value: --%s--\n", (char *)get(mappings, "Salut"));
 	printf("Value: --%s--\n", (char *)get(mappings, "GREP"));
-
 
 	/*Memory clean-up*/
 	fclose(input_file);
