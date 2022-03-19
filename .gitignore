@@ -1,0 +1,6 @@
+src/.vscode/tasks.json
+src/.vscode/settings.json
+src/.vscode/launch.json
+src/.vscode/c_cpp_properties.json
+src/valgrind-out.txt
+src/test_file
