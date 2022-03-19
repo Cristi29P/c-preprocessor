@@ -2,8 +2,8 @@
 // Refacut makefile si includes
 // Inlocuit functii periculoase cu altele
 // ADD SSCANF CHECKS
-// ADD COMMENTS IN THE WHOLE CODE BASE AND CHECK FOR ANY COMMENTS OR UNNECCESSARY DEAD CODE
-// FURTHER REFACTORING
+// ADD COMMENTS IN THE WHOLE CODE BASE AND CHECK FOR ANY COMMENTS OR
+// UNNECCESSARY DEAD CODE FURTHER REFACTORING
 
 #define PATH_LENGTH 50
 #define SMALL_BUFF 20
@@ -144,10 +144,9 @@ void solve_simple_line_sub(struct Hashmap *mappings, FILE *outfile,
 			   char *buffer)
 {
 	char value_copy[MAX_BUFF_SIZE] = {'\0'};
-	char *delim = "\t []{}<>=+-*/%!&|^.,:;()\\", *token;
+	char *delim = "\n\t []{}<>=+-*/%!&|^.,:;()\\", *token;
 
 	strncpy(value_copy, buffer, MAX_BUFF_SIZE);
-
 	token = strtok(buffer, delim);
 	while (token != NULL) {
 		if (has_key(mappings, token)) {
@@ -169,21 +168,51 @@ void undefine_symbol(struct Hashmap *mappings, char *buffer)
 	}
 }
 
+void check_if_cond(struct Hashmap *mappings, FILE *infile, FILE *outfile,
+		   char *buffer)
+{
+	char cond[MAX_BUFF_SIZE] = {'\0'}, *aux;
+	long value_cond;
+	char if_flag = 0;
+	char if_else_flag = 0;
+	char elif_flag = 0;
+	char else_flag = 0;
+	char endif_flag = 0;
+
+	sscanf(buffer, "#if %[^\n]s", cond);
+	value_cond = strtol(cond, &aux, 10);
+
+	if (value_cond) {
+
+	} else {
+		
+	}
+
+	// ies din loop
+	// iterez pana cand gasesc #endif
+}
+
+void choose_action(struct Hashmap *mappings, FILE *infile, FILE *outfile,
+		   char *buffer)
+{
+	if (!strncmp(buffer, "#define", 7)) {
+		define_symbol(mappings, infile, buffer);
+	} else if (!strncmp(buffer, "#undef", 6)) {
+		undefine_symbol(mappings, buffer);
+	} else if (!strncmp(buffer, "#if", 3)) {
+		check_if_cond(mappings, infile, outfile, buffer);
+	} else {
+		solve_simple_line_sub(mappings, outfile, buffer);
+	}
+}
+
 void parse_file(struct Hashmap *mappings, struct LinkedList *directories,
 		FILE *infile, FILE *outfile)
 {
 	char buffer[MAX_BUFF_SIZE] = {'\0'};
 
 	while (fgets(buffer, MAX_BUFF_SIZE, infile)) {
-		if (!strncmp(buffer, "#define", 7)) {
-			define_symbol(mappings, infile, buffer);
-		} else if (!strncmp(buffer, "#undef", 6)) {
-			undefine_symbol(mappings, buffer);
-		} else {
-			solve_simple_line_sub(mappings, outfile, buffer);
-		}
-		// prelucrare si afisare restul de siruri in fisier sau la
-		// iesirea standard
+		choose_action(mappings, infile, outfile, buffer);
 	}
 }
 
