@@ -81,30 +81,49 @@ int parse_cmd_arguments(struct Hashmap *mappings,
 
 void replace_str(char *haystack, char *needle, char *replc)
 {
-	char start[256], end[256], *last_pos;
+	char start[MAX_BUFF_SIZE], end[MAX_BUFF_SIZE], *last_pos;
 	size_t l_origLen;
 
-	l_origLen = strnlen(needle, 256);
+	l_origLen = strnlen(needle, MAX_BUFF_SIZE);
 	while ((last_pos = strstr(haystack, needle))) {
-		memset(start, '\0', 256);
-		memset(end, '\0', 256);
+		memset(start, '\0', MAX_BUFF_SIZE);
+		memset(end, '\0', MAX_BUFF_SIZE);
 
-		memcpy(start, haystack,
-		       (unsigned long)(last_pos - haystack));
+		memcpy(start, haystack, (unsigned long)(last_pos - haystack));
 		memcpy(end, last_pos + l_origLen, strlen(last_pos + l_origLen));
 
 		sprintf(haystack, "%s%s%s", start, replc, end);
 	}
 }
 
-void add_simple_define(struct Hashmap *mappings, char *buffer)
+void define_symbol(struct Hashmap *mappings, FILE *infile, char *buffer)
 {
 	char symbol[SMALL_BUFF] = {'\0'}, value[SMALL_BUFF] = {'\0'};
 	char value_copy[MAX_BUFF_SIZE] = {'\0'};
+	char final[MAX_BUFF_SIZE] = {'\0'};
 	char *delim = "\t []{}<>=+-*/%!&|^.,:;()\\", *token;
 
 	sscanf(buffer, "#define %s %[^\n]s", symbol, value);
 	strncpy(value_copy, value, SMALL_BUFF);
+
+	while (value[strlen(value) - 1] == '\\') {
+		token = strtok(value, delim);
+		while (token != NULL) {
+			if (has_key(mappings, token)) {
+				replace_str(value_copy, token,
+					    get(mappings, token));
+			}
+			token = strtok(NULL, delim);
+		}
+		value_copy[strlen(value_copy) - 1] = '\0';
+		strncat(final, value_copy, MAX_BUFF_SIZE);
+
+		memset(value, '\0', SMALL_BUFF);
+		memset(value_copy, '\0', MAX_BUFF_SIZE);
+
+		fscanf(infile, " %[^\n]s", value);
+		strncpy(value_copy, value, SMALL_BUFF);
+	}
 
 	token = strtok(value, delim);
 	while (token != NULL) {
@@ -113,19 +132,12 @@ void add_simple_define(struct Hashmap *mappings, char *buffer)
 		}
 		token = strtok(NULL, delim);
 	}
+	strncat(final, value_copy, MAX_BUFF_SIZE);
 
-	put(mappings, symbol, strnlen(symbol, SMALL_BUFF) + 1, value_copy,
-	    strnlen(value_copy, MAX_BUFF_SIZE) + 1);
+	put(mappings, symbol, strnlen(symbol, SMALL_BUFF) + 1, final,
+	    strnlen(final, MAX_BUFF_SIZE) + 1);
 }
 
-void add_text_define(struct Hashmap *mappings, FILE *infile, char *buffer)
-{
-	if (buffer[strlen(buffer) - 2] == '\\') {
-		// execute multi-line define procedure
-	} else {
-		add_simple_define(mappings, buffer);
-	}
-}
 void solve_simple_line_sub(struct Hashmap *mappings, FILE *outfile,
 			   char *buffer)
 {
@@ -162,7 +174,7 @@ void parse_file(struct Hashmap *mappings, struct LinkedList *directories,
 
 	while (fgets(buffer, MAX_BUFF_SIZE, infile)) {
 		if (!strncmp(buffer, "#define", 7)) {
-			add_text_define(mappings, infile, buffer);
+			define_symbol(mappings, infile, buffer);
 		} else if (!strncmp(buffer, "#undef", 6)) {
 			undefine_symbol(mappings, buffer);
 		} else {
