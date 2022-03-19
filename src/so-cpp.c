@@ -90,7 +90,7 @@ void replace_str(char *haystack, char *needle, char *replc)
 		memset(end, '\0', 256);
 
 		memcpy(start, haystack,
-		       (long unsigned int)(last_pos - haystack));
+		       (unsigned long)(last_pos - haystack));
 		memcpy(end, last_pos + l_origLen, strlen(last_pos + l_origLen));
 
 		sprintf(haystack, "%s%s%s", start, replc, end);
@@ -145,6 +145,16 @@ void solve_simple_line_sub(struct Hashmap *mappings, FILE *outfile,
 	fprintf(outfile, "%s", value_copy);
 }
 
+void undefine_symbol(struct Hashmap *mappings, char *buffer)
+{
+	char symbol[MAX_BUFF_SIZE] = {'\0'};
+	sscanf(buffer, "#undef %[^\n]s", symbol);
+
+	if (has_key(mappings, symbol)) {
+		remove_ht_entry(mappings, symbol);
+	}
+}
+
 void parse_file(struct Hashmap *mappings, struct LinkedList *directories,
 		FILE *infile, FILE *outfile)
 {
@@ -153,6 +163,8 @@ void parse_file(struct Hashmap *mappings, struct LinkedList *directories,
 	while (fgets(buffer, MAX_BUFF_SIZE, infile)) {
 		if (!strncmp(buffer, "#define", 7)) {
 			add_text_define(mappings, infile, buffer);
+		} else if (!strncmp(buffer, "#undef", 6)) {
+			undefine_symbol(mappings, buffer);
 		} else {
 			solve_simple_line_sub(mappings, outfile, buffer);
 		}
