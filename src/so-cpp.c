@@ -120,11 +120,29 @@ void add_simple_define(struct Hashmap *mappings, char *buffer)
 
 void add_text_define(struct Hashmap *mappings, FILE *infile, char *buffer)
 {
-	if (buffer[strlen(buffer) - 1] == '\\') {
+	if (buffer[strlen(buffer) - 2] == '\\') {
 		// execute multi-line define procedure
 	} else {
 		add_simple_define(mappings, buffer);
 	}
+}
+void solve_simple_line_sub(struct Hashmap *mappings, FILE *outfile,
+			   char *buffer)
+{
+	char value_copy[MAX_BUFF_SIZE] = {'\0'};
+	char *delim = "\t []{}<>=+-*/%!&|^.,:;()\\", *token;
+
+	strncpy(value_copy, buffer, MAX_BUFF_SIZE);
+
+	token = strtok(buffer, delim);
+	while (token != NULL) {
+		if (has_key(mappings, token)) {
+			replace_str(value_copy, token, get(mappings, token));
+		}
+		token = strtok(NULL, delim);
+	}
+
+	fprintf(outfile, "%s", value_copy);
 }
 
 void parse_file(struct Hashmap *mappings, struct LinkedList *directories,
@@ -136,7 +154,7 @@ void parse_file(struct Hashmap *mappings, struct LinkedList *directories,
 		if (!strncmp(buffer, "#define", 7)) {
 			add_text_define(mappings, infile, buffer);
 		} else {
-			printf("%s", buffer);
+			solve_simple_line_sub(mappings, outfile, buffer);
 		}
 		// prelucrare si afisare restul de siruri in fisier sau la
 		// iesirea standard
@@ -217,9 +235,6 @@ int main(int argc, char *argv[])
 	/*Finished the checking phase*/
 
 	parse_file(mappings, directories, input_file, output_file);
-	printf("Value: --%s--\n", (char *)get(mappings, "ABC"));
-	printf("Value: --%s--\n", (char *)get(mappings, "Salut"));
-	printf("Value: --%s--\n", (char *)get(mappings, "GREP"));
 
 	/*Memory clean-up*/
 	fclose(input_file);
