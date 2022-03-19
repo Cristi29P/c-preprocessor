@@ -1,7 +1,9 @@
 #include "hashmap.h"
 // Refacut makefile si includes
 // Inlocuit functii periculoase cu altele
-// REMOVE SSCANF CHECKS
+// ADD SSCANF CHECKS
+// ADD COMMENTS IN THE WHOLE CODE BASE AND CHECK FOR ANY COMMENTS OR UNNECCESSARY DEAD CODE
+// FURTHER REFACTORING
 
 #define PATH_LENGTH 50
 #define SMALL_BUFF 20
@@ -82,15 +84,15 @@ int parse_cmd_arguments(struct Hashmap *mappings,
 void replace_str(char *haystack, char *needle, char *replc)
 {
 	char start[MAX_BUFF_SIZE], end[MAX_BUFF_SIZE], *last_pos;
-	size_t l_origLen;
+	size_t len;
 
-	l_origLen = strnlen(needle, MAX_BUFF_SIZE);
+	len = strnlen(needle, MAX_BUFF_SIZE);
 	while ((last_pos = strstr(haystack, needle))) {
 		memset(start, '\0', MAX_BUFF_SIZE);
 		memset(end, '\0', MAX_BUFF_SIZE);
 
 		memcpy(start, haystack, (unsigned long)(last_pos - haystack));
-		memcpy(end, last_pos + l_origLen, strlen(last_pos + l_origLen));
+		memcpy(end, last_pos + len, strlen(last_pos + len));
 
 		sprintf(haystack, "%s%s%s", start, replc, end);
 	}
@@ -183,22 +185,6 @@ void parse_file(struct Hashmap *mappings, struct LinkedList *directories,
 		// prelucrare si afisare restul de siruri in fisier sau la
 		// iesirea standard
 	}
-}
-
-void print_string_linkedlist(struct LinkedList *list)
-{
-	struct Node *curr;
-	curr = list->head;
-
-	if (list == NULL) {
-		return;
-	}
-
-	while (curr != NULL) {
-		printf("%s ", (char *)(curr->data));
-		curr = curr->next;
-	}
-	printf("\n");
 }
 
 int main(int argc, char *argv[])
