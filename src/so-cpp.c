@@ -178,20 +178,21 @@ void choose_action(struct Hashmap *mappings, FILE *infile, FILE *outfile,
 	}
 }
 
+void go_to_endif(FILE *infile)
+{
+	char buffer[MAX_BUFF_SIZE] = {'\0'};
+	while (strncmp(buffer, "#endif", 6)) {
+		fgets(buffer, MAX_BUFF_SIZE, infile);
+	}
+}
+
 void check_if_cond(struct Hashmap *mappings, FILE *infile, FILE *outfile,
 		   char *buffer)
 {
 	char cond[MAX_BUFF_SIZE] = {'\0'}, cond_aux[MAX_BUFF_SIZE] = {'\0'},
 	     *aux;
 	char new_line[MAX_BUFF_SIZE] = {'\0'};
-	char new_cond;
 	long value_cond;
-
-	char if_flag = 0;
-	char if_else_flag = 0;
-	char elif_flag = 0;
-	char else_flag = 0;
-	char endif_flag = 0;
 
 	sscanf(buffer, "#if %[^\n]s", cond);
 	if (has_key(mappings, cond)) {
@@ -211,12 +212,27 @@ void check_if_cond(struct Hashmap *mappings, FILE *infile, FILE *outfile,
 		} while (strncmp(new_line, "#endif", 6) &&
 			 strncmp(new_line, "#else", 5) &&
 			 strncmp(new_line, "#elif", 5));
+		/*Nu am ajuns la #endif, ne ducem acolo*/
+		if (strncmp(new_line, "#endif", 6)) {
+			go_to_endif(infile);
+		}
+		
 	} else {
 		while (strncmp(new_line, "#endif", 6) &&
 		       strncmp(new_line, "#else", 5) &&
 		       strncmp(new_line, "#elif", 5)) {
 			fgets(new_line, MAX_BUFF_SIZE, infile);
 		}
+
+		if (!strncmp(new_line, "#else", 5)) {
+			fgets(new_line, MAX_BUFF_SIZE, infile);
+			do {
+				choose_action(mappings, infile, outfile,
+					      new_line);
+				fgets(new_line, MAX_BUFF_SIZE, infile);
+			} while (strncmp(new_line, "#endif", 6));
+
+		} // else (cazul cu elseif)
 	}
 	// verific daca if e true, daca da, ma duc pana gasesc #endif (setez
 	// flag #endif) daca if e false (pornesc search mode), ma duc pana
