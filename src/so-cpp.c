@@ -94,6 +94,19 @@ void replace_str(char *haystack, char *needle, char *replc)
 	}
 }
 
+void tokenize_replacer()
+{
+	char *token;
+	token = strtok(value, delim);
+	while (token != NULL) {
+		if (has_key(mappings, token)) {
+			replace_str(value_copy, token, // first
+				    get(mappings, token));
+		}
+		token = strtok(NULL, delim);
+	}
+}
+
 void define_symbol(struct Hashmap *mappings, FILE *infile, char *buffer)
 {
 	char symbol[SMALL_BUFF] = {'\0'}, value[SMALL_BUFF] = {'\0'};
@@ -105,14 +118,16 @@ void define_symbol(struct Hashmap *mappings, FILE *infile, char *buffer)
 	strncpy(value_copy, value, SMALL_BUFF);
 
 	while (value[strlen(value) - 1] == '\\') {
+		// --
 		token = strtok(value, delim);
 		while (token != NULL) {
 			if (has_key(mappings, token)) {
-				replace_str(value_copy, token,
+				replace_str(value_copy, token, // first
 					    get(mappings, token));
 			}
 			token = strtok(NULL, delim);
 		}
+		// --
 		value_copy[strlen(value_copy) - 1] = '\0';
 		strncat(final, value_copy, MAX_BUFF_SIZE);
 
@@ -122,14 +137,16 @@ void define_symbol(struct Hashmap *mappings, FILE *infile, char *buffer)
 		fscanf(infile, " %[^\n]s", value);
 		strncpy(value_copy, value, SMALL_BUFF);
 	}
-
+	// --
 	token = strtok(value, delim);
 	while (token != NULL) {
 		if (has_key(mappings, token)) {
-			replace_str(value_copy, token, get(mappings, token));
+			replace_str(value_copy, token,
+				    get(mappings, token)); // second
 		}
 		token = strtok(NULL, delim);
 	}
+	// --
 	strncat(final, value_copy, MAX_BUFF_SIZE);
 
 	put(mappings, symbol, strnlen(symbol, SMALL_BUFF) + 1, final,
@@ -143,13 +160,16 @@ void solve_simple_line_sub(struct Hashmap *mappings, FILE *outfile,
 	char *delim = "\n\t []{}<>=+-*/%!&|^.,:;()\\", *token;
 
 	strncpy(value_copy, buffer, MAX_BUFF_SIZE);
+	//--
 	token = strtok(buffer, delim);
 	while (token != NULL) {
 		if (has_key(mappings, token)) {
-			replace_str(value_copy, token, get(mappings, token));
+			replace_str(value_copy, token,
+				    get(mappings, token)); // third
 		}
 		token = strtok(NULL, delim);
 	}
+	//--
 
 	fprintf(outfile, "%s", value_copy);
 }
@@ -167,12 +187,24 @@ void undefine_symbol(struct Hashmap *mappings, char *buffer)
 void choose_action(struct Hashmap *mappings, FILE *infile, FILE *outfile,
 		   char *buffer)
 {
+	char aux[MAX_BUFF_SIZE] = {'\0'};
+
 	if (!strncmp(buffer, "#define", 7)) {
 		define_symbol(mappings, infile, buffer);
 	} else if (!strncmp(buffer, "#undef", 6)) {
 		undefine_symbol(mappings, buffer);
 	} else if (!strncmp(buffer, "#ifdef", 6)) {
 		replace_str(buffer, "#ifdef", "#if");
+		check_if_cond(mappings, infile, outfile, buffer);
+	} else if (!strncmp(buffer, "#ifndef", 7)) {
+		sscanf(buffer, "#ifndef %[^\n]s", aux);
+		if (has_key(mappings, aux)) {
+			memset(buffer, '\0', MAX_BUFF_SIZE);
+			snprintf(buffer, MAX_BUFF_SIZE, "#if 0");
+		} else {
+			memset(buffer, '\0', MAX_BUFF_SIZE);
+			snprintf(buffer, MAX_BUFF_SIZE, "#if 1");
+		}
 		check_if_cond(mappings, infile, outfile, buffer);
 	} else if (!strncmp(buffer, "#if", 3)) {
 		check_if_cond(mappings, infile, outfile, buffer);
@@ -209,9 +241,7 @@ void check_if_cond(struct Hashmap *mappings, FILE *infile, FILE *outfile,
 		   char *buffer)
 {
 	char cond[MAX_BUFF_SIZE] = {'\0'}, cond_aux[MAX_BUFF_SIZE] = {'\0'},
-	     *aux;
-	char new_line[MAX_BUFF_SIZE] = {'\0'};
-	char *ret;
+	     new_line[MAX_BUFF_SIZE] = {'\0'}, *aux, *ret;
 	long value_cond;
 
 	sscanf(buffer, "#if %[^\n]s", cond);
@@ -219,13 +249,12 @@ void check_if_cond(struct Hashmap *mappings, FILE *infile, FILE *outfile,
 		strncpy(cond_aux, cond, MAX_BUFF_SIZE);
 		memset(cond, '\0', MAX_BUFF_SIZE);
 		ret = (char *)get(mappings, cond_aux);
-		
+
 		if (!strlen(ret)) {
 			strncpy(cond, "1", MAX_BUFF_SIZE);
 		} else {
 			strncpy(cond, ret, MAX_BUFF_SIZE);
 		}
-		
 	}
 
 	value_cond = strtol(cond, &aux, 10);
