@@ -1,14 +1,10 @@
-#include "hashmap.h"
+#include "so-cpp.h"
 // Refacut makefile si includes
 // Inlocuit functii periculoase cu altele
 // ADD SSCANF CHECKS
 // ADD COMMENTS IN THE WHOLE CODE BASE AND CHECK FOR ANY COMMENTS OR
 // UNNECCESSARY DEAD CODE FURTHER REFACTORING
-
-#define PATH_LENGTH 50
-#define SMALL_BUFF 20
-#define HT_ENTRIES 100
-#define MAX_BUFF_SIZE 256
+// REFACYT SO_CPP.h
 
 int file_exists(const char *name)
 {
@@ -168,30 +164,6 @@ void undefine_symbol(struct Hashmap *mappings, char *buffer)
 	}
 }
 
-void check_if_cond(struct Hashmap *mappings, FILE *infile, FILE *outfile,
-		   char *buffer)
-{
-	char cond[MAX_BUFF_SIZE] = {'\0'}, *aux;
-	long value_cond;
-	char if_flag = 0;
-	char if_else_flag = 0;
-	char elif_flag = 0;
-	char else_flag = 0;
-	char endif_flag = 0;
-
-	sscanf(buffer, "#if %[^\n]s", cond);
-	value_cond = strtol(cond, &aux, 10);
-
-	if (value_cond) {
-
-	} else {
-		
-	}
-
-	// ies din loop
-	// iterez pana cand gasesc #endif
-}
-
 void choose_action(struct Hashmap *mappings, FILE *infile, FILE *outfile,
 		   char *buffer)
 {
@@ -204,6 +176,62 @@ void choose_action(struct Hashmap *mappings, FILE *infile, FILE *outfile,
 	} else {
 		solve_simple_line_sub(mappings, outfile, buffer);
 	}
+}
+
+void check_if_cond(struct Hashmap *mappings, FILE *infile, FILE *outfile,
+		   char *buffer)
+{
+	char cond[MAX_BUFF_SIZE] = {'\0'}, cond_aux[MAX_BUFF_SIZE] = {'\0'},
+	     *aux;
+	char new_line[MAX_BUFF_SIZE] = {'\0'};
+	char new_cond;
+	long value_cond;
+
+	char if_flag = 0;
+	char if_else_flag = 0;
+	char elif_flag = 0;
+	char else_flag = 0;
+	char endif_flag = 0;
+
+	sscanf(buffer, "#if %[^\n]s", cond);
+	if (has_key(mappings, cond)) {
+		strncpy(cond_aux, cond, MAX_BUFF_SIZE);
+		memset(cond, '\0', MAX_BUFF_SIZE);
+		strncpy(cond, (char *)get(mappings, cond_aux), MAX_BUFF_SIZE);
+	}
+
+	value_cond = strtol(cond, &aux, 10);
+
+	strncpy(new_line, buffer, MAX_BUFF_SIZE);
+	if (value_cond) {
+		fgets(new_line, MAX_BUFF_SIZE, infile);
+		do {
+			choose_action(mappings, infile, outfile, new_line);
+			fgets(new_line, MAX_BUFF_SIZE, infile);
+		} while (strncmp(new_line, "#endif", 6) &&
+			 strncmp(new_line, "#else", 5) &&
+			 strncmp(new_line, "#elif", 5));
+	} else {
+		while (strncmp(new_line, "#endif", 6) &&
+		       strncmp(new_line, "#else", 5) &&
+		       strncmp(new_line, "#elif", 5)) {
+			fgets(new_line, MAX_BUFF_SIZE, infile);
+		}
+	}
+	// verific daca if e true, daca da, ma duc pana gasesc #endif (setez
+	// flag #endif) daca if e false (pornesc search mode), ma duc pana
+	// gasesc #elif, #else, #endif
+	// #endif => ies, nu mai scriu nimic
+	//										#else
+	//=> scriu ce e in else si ma duc pana la #endif
+	// 										#elif
+	// => daca e true, scriu ce e in #elif si apoi caut #endif
+	//									  		  =>
+	// daca e false, caut urmatorul #elif, #else, #endif
+	// ies din loop
+	// iterez pana cand gasesc #endif
+	// la fiecare linie din blocul adevarat, tokenizez si verific ce e in
+	// interiorul ei cu cmd checker
 }
 
 void parse_file(struct Hashmap *mappings, struct LinkedList *directories,
