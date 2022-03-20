@@ -34,7 +34,7 @@ void init_ht(struct Hashmap *ht, int hmax,
 	DIE(ht->buckets == NULL, "Memory allocation failed for ht->buckets!");
 
 	while (i < hmax) {
-		init_list(&ht->buckets[i]);
+		list_init(&ht->buckets[i]);
 		i++;
 	}
 }
@@ -98,7 +98,7 @@ void put(struct Hashmap *ht, void *key, int key_size_bytes, void *value,
 	DIE(info_tmp.value == NULL,
 	    "Memory allocation for info_tmp->key failed!");
 
-	add_nth_node(&ht->buckets[index], get_size(&ht->buckets[index]),
+	add_node(&ht->buckets[index], list_size(&ht->buckets[index]),
 		     &info_tmp, sizeof(struct pair));
 
 	ht->size++;
@@ -146,7 +146,7 @@ void remove_ht_entry(struct Hashmap *ht, void *key)
 		}
 	}
 
-	tmp = remove_nth_node(&ht->buckets[index], pozitie);
+	tmp = remove_node(&ht->buckets[index], pozitie);
 	ht->size--;
 
 	free((((struct pair *)tmp->data)->key));
@@ -180,5 +180,3 @@ void free_ht(struct Hashmap *ht)
 }
 
 int get_ht_size(struct Hashmap *ht) { return (ht == NULL) ? -1 : ht->size; }
-
-int get_ht_hmax(struct Hashmap *ht) { return (ht == NULL) ? -1 : ht->hmax; }

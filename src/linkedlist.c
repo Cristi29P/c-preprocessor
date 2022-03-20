@@ -1,12 +1,12 @@
 #include "linkedlist.h"
 
-void init_list(struct LinkedList *list)
+void list_init(struct LinkedList *list)
 {
 	list->head = NULL;
 	list->size = 0;
 }
 
-void add_nth_node(struct LinkedList *list, int n, void *new_data,
+void add_node(struct LinkedList *list, int n, void *new_data,
 		  unsigned int new_data_size)
 {
 	struct Node *prev, *curr, *new_node;
@@ -45,7 +45,7 @@ void add_nth_node(struct LinkedList *list, int n, void *new_data,
 		prev->next = new_node;
 }
 
-void *remove_nth_node(struct LinkedList *list, int n)
+void *remove_node(struct LinkedList *list, int n)
 {
 	struct Node *prev, *curr;
 
@@ -76,12 +76,12 @@ void *remove_nth_node(struct LinkedList *list, int n)
 	return curr;
 }
 
-int get_size(struct LinkedList *list)
+int list_size(struct LinkedList *list)
 {
 	return (list == NULL) ? -1 : list->size;
 }
 
-void free_list(struct LinkedList **pp_list)
+void free_list_mem(struct LinkedList **pp_list)
 {
 	struct Node *tmp;
 
@@ -93,8 +93,8 @@ void free_list(struct LinkedList **pp_list)
 		return;
 	}
 
-	for (; get_size(*pp_list) > 0;) {
-		tmp = remove_nth_node(*pp_list, 0);
+	for (; list_size(*pp_list) > 0;) {
+		tmp = remove_node(*pp_list, 0);
 		free(tmp->data);
 		free(tmp);
 	}

@@ -32,8 +32,6 @@ void remove_ht_entry(struct Hashmap *ht, void *key);
 
 int get_ht_size(struct Hashmap *ht);
 
-int get_ht_hmax(struct Hashmap *ht);
-
 void free_ht(struct Hashmap *ht);
 
 int cmp_strings(void *a, void *b);

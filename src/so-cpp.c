@@ -4,7 +4,7 @@
 // ADD SSCANF CHECKS
 // ADD COMMENTS IN THE WHOLE CODE BASE AND CHECK FOR ANY COMMENTS OR
 // UNNECCESSARY DEAD CODE FURTHER REFACTORING
-// REFACYT SO_CPP.h
+// REFACUT SO_CPP.h
 
 int file_exists(const char *name)
 {
@@ -37,8 +37,8 @@ void add_cmd_directory(struct LinkedList *directories, char *argv)
 	if (rv < 0) {
 		printf("Sscanf failed!\n");
 	}
-	add_nth_node(directories, get_size(directories), directory,
-		     strlen(directory) + 1);
+	add_node(directories, list_size(directories), directory,
+		 strlen(directory) + 1);
 }
 
 int check_param(char *argv)
@@ -186,6 +186,22 @@ void go_to_endif(FILE *infile)
 	}
 }
 
+void solve_if(struct Hashmap *mappings, FILE *infile, FILE *outfile)
+{
+	char new_line[MAX_BUFF_SIZE] = {'\0'};
+	fgets(new_line, MAX_BUFF_SIZE, infile);
+	do {
+		choose_action(mappings, infile, outfile, new_line);
+		fgets(new_line, MAX_BUFF_SIZE, infile);
+	} while (strncmp(new_line, "#endif", 6) &&
+		 strncmp(new_line, "#else", 5) &&
+		 strncmp(new_line, "#elif", 5));
+	/*Nu am ajuns la #endif, ne ducem acolo*/
+	if (strncmp(new_line, "#endif", 6)) {
+		go_to_endif(infile);
+	}
+}
+
 void check_if_cond(struct Hashmap *mappings, FILE *infile, FILE *outfile,
 		   char *buffer)
 {
@@ -202,21 +218,9 @@ void check_if_cond(struct Hashmap *mappings, FILE *infile, FILE *outfile,
 	}
 
 	value_cond = strtol(cond, &aux, 10);
-
 	strncpy(new_line, buffer, MAX_BUFF_SIZE);
 	if (value_cond) {
-		fgets(new_line, MAX_BUFF_SIZE, infile);
-		do {
-			choose_action(mappings, infile, outfile, new_line);
-			fgets(new_line, MAX_BUFF_SIZE, infile);
-		} while (strncmp(new_line, "#endif", 6) &&
-			 strncmp(new_line, "#else", 5) &&
-			 strncmp(new_line, "#elif", 5));
-		/*Nu am ajuns la #endif, ne ducem acolo*/
-		if (strncmp(new_line, "#endif", 6)) {
-			go_to_endif(infile);
-		}
-		
+		solve_if(mappings, infile, outfile);
 	} else {
 		while (strncmp(new_line, "#endif", 6) &&
 		       strncmp(new_line, "#else", 5) &&
@@ -232,22 +236,11 @@ void check_if_cond(struct Hashmap *mappings, FILE *infile, FILE *outfile,
 				fgets(new_line, MAX_BUFF_SIZE, infile);
 			} while (strncmp(new_line, "#endif", 6));
 
-		} // else (cazul cu elseif)
+		} else if (!strncmp(new_line, "#elif", 5)) {
+			replace_str(new_line, "#elif", "#if");
+			check_if_cond(mappings, infile, outfile, new_line);
+		}
 	}
-	// verific daca if e true, daca da, ma duc pana gasesc #endif (setez
-	// flag #endif) daca if e false (pornesc search mode), ma duc pana
-	// gasesc #elif, #else, #endif
-	// #endif => ies, nu mai scriu nimic
-	//										#else
-	//=> scriu ce e in else si ma duc pana la #endif
-	// 										#elif
-	// => daca e true, scriu ce e in #elif si apoi caut #endif
-	//									  		  =>
-	// daca e false, caut urmatorul #elif, #else, #endif
-	// ies din loop
-	// iterez pana cand gasesc #endif
-	// la fiecare linie din blocul adevarat, tokenizez si verific ce e in
-	// interiorul ei cu cmd checker
 }
 
 void parse_file(struct Hashmap *mappings, struct LinkedList *directories,
@@ -280,14 +273,14 @@ int main(int argc, char *argv[])
 		exit(ENOMEM);
 	}
 
-	init_list(directories);
+	list_init(directories);
 	init_ht(mappings, HT_ENTRIES, hash_function_string, cmp_strings);
 
 	/*Parse cmd line arguments and check if there is any invalid falig*/
 	rv = parse_cmd_arguments(mappings, directories, infile, outfile, argv,
 				 argc);
 	if (rv) {
-		free_list(&directories);
+		free_list_mem(&directories);
 		free_ht(mappings);
 		exit(ENOMEM);
 	}
@@ -296,7 +289,7 @@ int main(int argc, char *argv[])
 	if (strlen(infile)) {
 		input_file = fopen(infile, "r");
 		if (input_file == NULL) {
-			free_list(&directories);
+			free_list_mem(&directories);
 			free_ht(mappings);
 			exit(ENOMEM);
 		}
@@ -308,7 +301,7 @@ int main(int argc, char *argv[])
 		output_file = fopen(outfile, "w");
 		if (output_file == NULL) {
 			fclose(input_file);
-			free_list(&directories);
+			free_list_mem(&directories);
 			free_ht(mappings);
 			exit(ENOMEM);
 		}
@@ -322,7 +315,7 @@ int main(int argc, char *argv[])
 	/*Memory clean-up*/
 	fclose(input_file);
 	fclose(output_file);
-	free_list(&directories);
+	free_list_mem(&directories);
 	free_ht(mappings);
 
 	return 0;

@@ -13,15 +13,15 @@ struct LinkedList {
 	int size;
 };
 
-void init_list(struct LinkedList *list);
+void list_init(struct LinkedList *list);
 
-void add_nth_node(struct LinkedList *list, int n, void *new_data,
+void add_node(struct LinkedList *list, int nth_node, void *new_data,
 		  unsigned int new_data_size);
 
-void *remove_nth_node(struct LinkedList *list, int n);
+void *remove_node(struct LinkedList *list, int nth_node);
 
-int get_size(struct LinkedList *list);
+int list_size(struct LinkedList *list);
 
-void free_list(struct LinkedList **list);
+void free_list_mem(struct LinkedList **list);
 
 #endif /* LINKEDLIST_H__ */
