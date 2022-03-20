@@ -171,6 +171,9 @@ void choose_action(struct Hashmap *mappings, FILE *infile, FILE *outfile,
 		define_symbol(mappings, infile, buffer);
 	} else if (!strncmp(buffer, "#undef", 6)) {
 		undefine_symbol(mappings, buffer);
+	} else if (!strncmp(buffer, "#ifdef", 6)) {
+		replace_str(buffer, "#ifdef", "#if");
+		check_if_cond(mappings, infile, outfile, buffer);
 	} else if (!strncmp(buffer, "#if", 3)) {
 		check_if_cond(mappings, infile, outfile, buffer);
 	} else {
@@ -208,13 +211,21 @@ void check_if_cond(struct Hashmap *mappings, FILE *infile, FILE *outfile,
 	char cond[MAX_BUFF_SIZE] = {'\0'}, cond_aux[MAX_BUFF_SIZE] = {'\0'},
 	     *aux;
 	char new_line[MAX_BUFF_SIZE] = {'\0'};
+	char *ret;
 	long value_cond;
 
 	sscanf(buffer, "#if %[^\n]s", cond);
 	if (has_key(mappings, cond)) {
 		strncpy(cond_aux, cond, MAX_BUFF_SIZE);
 		memset(cond, '\0', MAX_BUFF_SIZE);
-		strncpy(cond, (char *)get(mappings, cond_aux), MAX_BUFF_SIZE);
+		ret = (char *)get(mappings, cond_aux);
+		
+		if (!strlen(ret)) {
+			strncpy(cond, "1", MAX_BUFF_SIZE);
+		} else {
+			strncpy(cond, ret, MAX_BUFF_SIZE);
+		}
+		
 	}
 
 	value_cond = strtol(cond, &aux, 10);
