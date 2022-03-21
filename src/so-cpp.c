@@ -94,53 +94,32 @@ void expand_str(char *haystack, char *needle, char *replc)
 	}
 }
 
-// void replace_str(char *haystack, char *needle, char *replc)
-// {
-
-// 	char start[MAX_BUFF_SIZE], end[MAX_BUFF_SIZE], *last_pos;
-// 	size_t len;
-
-// 	len = strnlen(needle, MAX_BUFF_SIZE);
-// 	while ((last_pos = strstr(haystack, needle))) {
-// 		memset(start, '\0', MAX_BUFF_SIZE);
-// 		memset(end, '\0', MAX_BUFF_SIZE);
-
-// 		memcpy(start, haystack, (unsigned long)(last_pos - haystack));
-// 		memcpy(end, last_pos + len, strlen(last_pos + len));
-
-// 		sprintf(haystack, "%s%s%s", start, replc, end);
-// 	}
-// }
-
 void replace_str(char *haystack, char *needle, char *replc)
 {
-	char *delim = "\"";
+
 	char str1[MAX_BUFF_SIZE] = {'\0'}, str2[MAX_BUFF_SIZE] = {'\0'},
 	     str3[MAX_BUFF_SIZE] = {'\0'};
 	char haystack_cpy[MAX_BUFF_SIZE] = {'\0'};
-	char *ptr;
+	char *pos1, *pos2;
 
 	strncpy(haystack_cpy, haystack, MAX_BUFF_SIZE);
 
-	if ((ptr = strtok(haystack_cpy, delim))) {
-		strncpy(str1, ptr, MAX_BUFF_SIZE);
-	}
+	pos1 = strstr(haystack_cpy, "\"");
 
-	if ((ptr = strtok(NULL, delim))) {
-		strncpy(str2, ptr, MAX_BUFF_SIZE);
-	}
+	if (pos1 != NULL) {
+		pos1++;
+		pos2 = strstr(pos1, "\"") + 1;
 
-	if ((ptr = strtok(NULL, delim))) {
-		strncpy(str3, ptr, MAX_BUFF_SIZE);
-	}
+		sscanf(haystack_cpy, "%[^\"]s", str1);
+		sscanf(pos1, "%[^\"]s", str2);
+		sscanf(pos2, "%[^\"]n", str3);
 
-	if (!strlen(str2)) {
-		expand_str(str1, needle, replc);
-		sprintf(haystack, "%s", str1);
-	} else {
 		expand_str(str1, needle, replc);
 		expand_str(str3, needle, replc);
 		sprintf(haystack, "%s\"%s\"%s", str1, str2, str3);
+	} else {
+		expand_str(haystack_cpy, needle, replc);
+		sprintf(haystack, "%s", haystack_cpy);
 	}
 }
 
@@ -196,7 +175,7 @@ void solve_simple_line_sub(struct Hashmap *mappings, FILE *outfile,
 	token = strtok(buffer, delim);
 	while (token != NULL) {
 		if (has_key(mappings, token)) {
-			// replace_str(value_copy, token, get(mappings, token));
+			 replace_str(value_copy, token, get(mappings, token));
 		}
 		token = strtok(NULL, delim);
 	}
