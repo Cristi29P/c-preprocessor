@@ -9,7 +9,7 @@
 int file_exists(const char *name)
 {
 	FILE *file = fopen(name, "r");
-	if (name) {
+	if (file) {
 		fclose(file);
 		return 1;
 	}
@@ -175,7 +175,7 @@ void solve_simple_line_sub(struct Hashmap *mappings, FILE *outfile,
 	token = strtok(buffer, delim);
 	while (token != NULL) {
 		if (has_key(mappings, token)) {
-			 replace_str(value_copy, token, get(mappings, token));
+			replace_str(value_copy, token, get(mappings, token));
 		}
 		token = strtok(NULL, delim);
 	}
@@ -193,10 +193,64 @@ void undefine_symbol(struct Hashmap *mappings, char *buffer)
 	}
 }
 
-void choose_action(struct Hashmap *mappings, FILE *infile, FILE *outfile,
-		   char *buffer)
+int solve_include(struct Hashmap *mappings, struct LinkedList *directories,
+		  FILE *infile, FILE *outfile, char *buffer, char *infile_name)
+{
+	char file_name[PATH_LENGTH] = {'\0'}, full_path[MAX_BUFF_SIZE] = {'\0'};
+	char *ptr;
+	FILE *new_infile;
+	int ret;
+
+	sscanf(buffer, "#include \"%[^\"]s", file_name);
+
+	if (infile == stdin) {
+		snprintf(full_path, MAX_BUFF_SIZE, "./%s", file_name);
+
+		if (!file_exists(full_path)) {
+			return -1;
+		}
+		new_infile = fopen(full_path, "r");
+		if (new_infile == NULL) {
+			return -1;
+		}
+		ret = parse_file(mappings, directories, new_infile, outfile,
+				 full_path);
+		if (ret == -1) {
+			fclose(new_infile);
+			return ret;
+		}
+		fclose(new_infile);
+	} else {
+		ptr = strrchr(infile_name, '/') + 1;
+		strncpy(full_path, infile_name, PATH_LENGTH);
+		replace_str(full_path, ptr, file_name);
+
+		if (!file_exists(full_path)) {
+			return -1;
+		}
+
+		new_infile = fopen(full_path, "r");
+		if (new_infile == NULL) {
+			return -1;
+		}
+
+		ret = parse_file(mappings, directories, new_infile, outfile,
+				 full_path);
+		if (ret == -1) {
+			fclose(new_infile);
+			return ret;
+		}
+		fclose(new_infile);
+	}
+
+	return 0;
+}
+
+int choose_action(struct Hashmap *mappings, struct LinkedList *directories,
+		  FILE *infile, FILE *outfile, char *buffer, char *infile_name)
 {
 	char aux[MAX_BUFF_SIZE] = {'\0'};
+	int rv;
 
 	if (!strncmp(buffer, "#define", 7)) {
 		define_symbol(mappings, infile, buffer);
@@ -204,22 +258,31 @@ void choose_action(struct Hashmap *mappings, FILE *infile, FILE *outfile,
 		undefine_symbol(mappings, buffer);
 	} else if (!strncmp(buffer, "#ifdef", 6)) {
 		replace_str(buffer, "#ifdef", "#if");
-		check_if_cond(mappings, infile, outfile, buffer);
+		check_if_cond(mappings, directories, infile, outfile, buffer,
+			      infile_name);
 	} else if (!strncmp(buffer, "#ifndef", 7)) {
 		sscanf(buffer, "#ifndef %[^\n]s", aux);
 		if (has_key(mappings, aux)) {
-			memset(buffer, '\0', MAX_BUFF_SIZE);
 			snprintf(buffer, MAX_BUFF_SIZE, "#if 0");
 		} else {
-			memset(buffer, '\0', MAX_BUFF_SIZE);
 			snprintf(buffer, MAX_BUFF_SIZE, "#if 1");
 		}
-		check_if_cond(mappings, infile, outfile, buffer);
+		check_if_cond(mappings, directories, infile, outfile, buffer,
+			      infile_name);
 	} else if (!strncmp(buffer, "#if", 3)) {
-		check_if_cond(mappings, infile, outfile, buffer);
+		check_if_cond(mappings, directories, infile, outfile, buffer,
+			      infile_name);
+	} else if (!strncmp(buffer, "#include", 8)) {
+		rv = solve_include(mappings, directories, infile, outfile,
+				   buffer, infile_name);
+		if (rv == -1) {
+			return -1;
+		}
 	} else {
 		solve_simple_line_sub(mappings, outfile, buffer);
 	}
+
+	return 0;
 }
 
 void go_to_endif(FILE *infile)
@@ -230,12 +293,14 @@ void go_to_endif(FILE *infile)
 	}
 }
 
-void solve_if(struct Hashmap *mappings, FILE *infile, FILE *outfile)
+void solve_if(struct Hashmap *mappings, struct LinkedList *directories,
+	      FILE *infile, FILE *outfile, char *infile_name)
 {
 	char new_line[MAX_BUFF_SIZE] = {'\0'};
 	fgets(new_line, MAX_BUFF_SIZE, infile);
 	do {
-		choose_action(mappings, infile, outfile, new_line);
+		choose_action(mappings, directories, infile, outfile, new_line,
+			      infile_name);
 		fgets(new_line, MAX_BUFF_SIZE, infile);
 	} while (strncmp(new_line, "#endif", 6) &&
 		 strncmp(new_line, "#else", 5) &&
@@ -246,8 +311,8 @@ void solve_if(struct Hashmap *mappings, FILE *infile, FILE *outfile)
 	}
 }
 
-void check_if_cond(struct Hashmap *mappings, FILE *infile, FILE *outfile,
-		   char *buffer)
+void check_if_cond(struct Hashmap *mappings, struct LinkedList *directories,
+		   FILE *infile, FILE *outfile, char *buffer, char *infile_name)
 {
 	char cond[MAX_BUFF_SIZE] = {'\0'}, cond_aux[MAX_BUFF_SIZE] = {'\0'},
 	     new_line[MAX_BUFF_SIZE] = {'\0'}, *aux, *ret;
@@ -269,7 +334,7 @@ void check_if_cond(struct Hashmap *mappings, FILE *infile, FILE *outfile,
 	value_cond = strtol(cond, &aux, 10);
 	strncpy(new_line, buffer, MAX_BUFF_SIZE);
 	if (value_cond) {
-		solve_if(mappings, infile, outfile);
+		solve_if(mappings, directories, infile, outfile, infile_name);
 	} else {
 		while (strncmp(new_line, "#endif", 6) &&
 		       strncmp(new_line, "#else", 5) &&
@@ -280,26 +345,33 @@ void check_if_cond(struct Hashmap *mappings, FILE *infile, FILE *outfile,
 		if (!strncmp(new_line, "#else", 5)) {
 			fgets(new_line, MAX_BUFF_SIZE, infile);
 			do {
-				choose_action(mappings, infile, outfile,
-					      new_line);
+				choose_action(mappings, directories, infile,
+					      outfile, new_line, infile_name);
 				fgets(new_line, MAX_BUFF_SIZE, infile);
 			} while (strncmp(new_line, "#endif", 6));
-
 		} else if (!strncmp(new_line, "#elif", 5)) {
 			replace_str(new_line, "#elif", "#if");
-			check_if_cond(mappings, infile, outfile, new_line);
+			check_if_cond(mappings, directories, infile, outfile,
+				      new_line, infile_name);
 		}
 	}
 }
 
-void parse_file(struct Hashmap *mappings, struct LinkedList *directories,
-		FILE *infile, FILE *outfile)
+int parse_file(struct Hashmap *mappings, struct LinkedList *directories,
+	       FILE *infile, FILE *outfile, char *infile_name)
 {
 	char buffer[MAX_BUFF_SIZE] = {'\0'};
+	int rv = 0;
 
 	while (fgets(buffer, MAX_BUFF_SIZE, infile)) {
-		choose_action(mappings, infile, outfile, buffer);
+		rv = choose_action(mappings, directories, infile, outfile,
+				   buffer, infile_name);
+		if (rv == -1) {
+			return rv;
+		}
 	}
+
+	return rv;
 }
 
 int main(int argc, char *argv[])
@@ -359,7 +431,7 @@ int main(int argc, char *argv[])
 	}
 	/*Finished the checking phase*/
 
-	parse_file(mappings, directories, input_file, output_file);
+	rv = parse_file(mappings, directories, input_file, output_file, infile);
 
 	/*Memory clean-up*/
 	fclose(input_file);
@@ -367,5 +439,5 @@ int main(int argc, char *argv[])
 	free_list_mem(&directories);
 	free_ht(mappings);
 
-	return 0;
+	return rv;
 }
