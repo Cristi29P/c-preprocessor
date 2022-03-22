@@ -36,7 +36,7 @@ int file_exists(const char *name)
 
 void add_cmd_define(struct Hashmap *mappings, char *argv)
 {
-	char symbol[SMALL_BUFF] = {'\0'}, value[SMALL_BUFF] = {'\0'};
+	char symbol[MAX_BUFF_SIZE] = {'\0'}, value[MAX_BUFF_SIZE] = {'\0'};
 	int rv;
 
 	rv = sscanf(argv, "%[^=]=%s", symbol, value);
@@ -108,19 +108,19 @@ void expand_str(char *haystack, char *needle, char *replc)
 		memset(start, '\0', MAX_BUFF_SIZE);
 		memset(end, '\0', MAX_BUFF_SIZE);
 
-		// strncpy(start, haystack, (unsigned long)(last_pos - haystack));
-		// strncpy(end, last_pos + len, strlen(last_pos + len));
 
 		memcpy(start, haystack, (unsigned long)(last_pos - haystack));
 		memcpy(end, last_pos + len, strlen(last_pos + len));
 
 		sprintf(haystack, "%s%s%s", start, replc, end);
+		if ((last_pos = strstr(haystack, needle))) {
+			break;
+		}
 	}
 }
 
 void replace_str(char *haystack, char *needle, char *replc)
 {
-
 	char str1[MAX_BUFF_SIZE] = {'\0'}, str2[MAX_BUFF_SIZE] = {'\0'},
 	     str3[MAX_BUFF_SIZE] = {'\0'};
 	char haystack_cpy[MAX_BUFF_SIZE] = {'\0'};
@@ -155,9 +155,7 @@ void define_symbol(struct Hashmap *mappings, FILE *infile, char *buffer)
 	char *delim = "\t []{}<>=+-*/%!&|^.,:;()\\", *token;
 
 	sscanf(buffer, "#define %s %[^\n]s", symbol, value);
-	strncpy(value_copy, value, SMALL_BUFF + 5);
-	printf("Before substition: Symbol: %s     Value: -%s-\n", symbol,
-	       value_copy);
+	strncpy(value_copy, value, MAX_BUFF_SIZE);
 
 	if (strlen(value) == 0) {
 		put(mappings, symbol, strnlen(symbol, MAX_BUFF_SIZE) + 1, "", 1);
@@ -194,9 +192,6 @@ void define_symbol(struct Hashmap *mappings, FILE *infile, char *buffer)
 	strncat(final, value_copy, MAX_BUFF_SIZE);
 	put(mappings, symbol, strnlen(symbol, MAX_BUFF_SIZE) + 1, final,
 	    strnlen(final, MAX_BUFF_SIZE) + 1);
-
-	printf("After substition: Symbol: -%s-     Value: -%s-\n", symbol,
-	       final);
 }
 
 void solve_simple_line_sub(struct Hashmap *mappings, FILE *outfile,
@@ -209,12 +204,8 @@ void solve_simple_line_sub(struct Hashmap *mappings, FILE *outfile,
 	token = strtok(buffer, delim);
 	while (token != NULL) {
 		if (has_key(mappings, token)) {
-			printf("Mapping: %s\n", (char *)get(mappings, token));
-			printf("Value_copy: %s\n", value_copy);
-
 			replace_str(value_copy, token,
 				    (char *)get(mappings, token));
-			printf("AFter replace\n");
 		}
 		token = strtok(NULL, delim);
 	}
@@ -322,7 +313,12 @@ int choose_action(struct Hashmap *mappings, struct LinkedList *directories,
 	} else if (!strncmp(buffer, "#undef", 6)) {
 		undefine_symbol(mappings, buffer);
 	} else if (!strncmp(buffer, "#ifdef", 6)) {
-		replace_str(buffer, "#ifdef", "#if");
+		sscanf(buffer, "#ifdef %[^\n]s", aux);
+		if (has_key(mappings, aux)) {
+			snprintf(buffer, MAX_BUFF_SIZE, "#if 1");
+		} else {
+			snprintf(buffer, MAX_BUFF_SIZE, "#if 0");
+		}
 		check_if_cond(mappings, directories, infile, outfile, buffer,
 			      infile_name);
 	} else if (!strncmp(buffer, "#ifndef", 7)) {
@@ -391,7 +387,7 @@ void check_if_cond(struct Hashmap *mappings, struct LinkedList *directories,
 
 		if (!strlen(ret)) {
 			strncpy(cond, "1",
-				MAX_BUFF_SIZE); /*daca avem cheie nula*/
+				MAX_BUFF_SIZE); /*daca avem valoare nula pentru cheia respectiva*/
 		} else {
 			strncpy(cond, ret, MAX_BUFF_SIZE);
 		}
@@ -400,7 +396,9 @@ void check_if_cond(struct Hashmap *mappings, struct LinkedList *directories,
 	value_cond = strtol(cond, &aux, 10);
 	if (value_cond == 0 && cond[0] != '0') {
 		value_cond = 1;
+		printf("AICI\n");
 	}
+
 	strncpy(new_line, buffer, MAX_BUFF_SIZE);
 	if (value_cond) {
 		solve_if(mappings, directories, infile, outfile, infile_name);
@@ -499,17 +497,9 @@ int main(int argc, char *argv[])
 		output_file = stdout;
 	}
 	/*Finished the checking phase*/
-	printf("Before parsing\n");
-	printf("DEBUG_STR: --%s--\n", (char *)get(mappings, "DEBUG_STR"));
-	printf("CUSTOM_DBG: --%s--\n", (char *)get(mappings, "CUSTOM_DBG"));
-	printf("DEBUG: --%s--\n", (char *)get(mappings, "DEBUG"));
 
 	rv = parse_file(mappings, directories, input_file, output_file, infile);
 
-	printf("After parsing\n");
-	printf("DEBUG_STR: --%s--\n", (char *)get(mappings, "DEBUG_STR"));
-	printf("CUSTOM_DBG: --%s--\n", (char *)get(mappings, "CUSTOM_DBG"));
-	printf("DEBUG: --%s--\n", (char *)get(mappings, "DEBUG"));
 
 	/*Memory clean-up*/
 	fclose(input_file);
