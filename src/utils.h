@@ -10,6 +10,13 @@
 #include <string.h>
 #include <ctype.h>
 
+
+#define PATH_LENGTH 50
+#define SMALL_BUFF 20
+#define HT_ENTRIES 10
+#define MAX_BUFF_SIZE 256
+
+
 /* useful macro for handling error codes */
 #define DIE(assertion, call_description)                                       \
 	do {                                                                   \
@@ -19,5 +26,13 @@
 			exit(errno);                                           \
 		}                                                              \
 	} while (0)
+
+int file_exists(const char *name);
+
+int check_param(char *argv);
+
+void replace_str(char *haystack, char *needle, char *replc);
+
+void expand_str(char *haystack, char *needle, char *replc);
 
 #endif /* UTILS_H_ */

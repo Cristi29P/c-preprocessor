@@ -1,21 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "so-cpp.h"
-// Refacut makefile si includes
-// Inlocuit functii periculoase cu altele
-// ADD SSCANF CHECKS
-// ADD COMMENTS IN THE WHOLE CODE BASE AND CHECK FOR ANY COMMENTS OR
-// UNNECCESSARY DEAD CODE FURTHER REFACTORING
-// REFACUT SO_CPP.h
-
-int file_exists(const char *name)
-{
-	FILE *file = fopen(name, "r");
-
-	if (file) {
-		fclose(file);
-		return 1;
-	}
-	return 0;
-}
 
 void add_cmd_define(struct Hashmap *mappings, char *argv)
 {
@@ -23,10 +7,9 @@ void add_cmd_define(struct Hashmap *mappings, char *argv)
 	int rv;
 
 	rv = sscanf(argv, "%[^=]=%s", symbol, value);
-	if (rv <= 0) {
-		printf("Sscanf failed!\n");
+	if (!rv)
 		exit(-1);
-	}
+
 	put(mappings, symbol, strlen(symbol) + 1, value, strlen(value) + 1);
 }
 
@@ -37,27 +20,19 @@ void add_cmd_directory(struct LinkedList *directories, char *argv)
 
 	rv = sscanf(argv, "%s", directory);
 	if (rv < 0)
-		printf("Sscanf failed!\n");
+		exit(-1);
 
 	add_node(directories, list_size(directories), directory,
 		 strlen(directory) + 1);
-}
-
-int check_param(char *argv)
-{
-	if (strncmp(argv, "-D", 2) || strncmp(argv, "-I", 2))
-		return -1;
-
-	return 0;
 }
 
 int parse_cmd_arguments(struct Hashmap *mappings,
 			struct LinkedList *directories, char *infile,
 			char *outfile, char *argv[], int argc)
 {
-	int input_set = 0;
+	int input_set = 0, i;
 
-	for (int i = 1; i < argc; i++) {
+	for (i = 1; i < argc; i++) {
 		if (!strncmp(argv[i], "-D", 2) && strlen(argv[i]) == 2) {
 			i++; /*inaintez la urmatorul argument*/
 			add_cmd_define(mappings, argv[i]);
@@ -78,67 +53,6 @@ int parse_cmd_arguments(struct Hashmap *mappings,
 		}
 	}
 	return 0;
-}
-
-void expand_str(char *haystack, char *needle, char *replc)
-{
-	char start[MAX_BUFF_SIZE] = {'\0'}, end[MAX_BUFF_SIZE] = {'\0'},
-	     *last_pos;
-
-	size_t len = 0;
-
-	last_pos = NULL;
-
-	len = strnlen(needle, MAX_BUFF_SIZE);
-	last_pos = strstr(haystack, needle);
-	while (last_pos) {
-		memset(start, '\0', MAX_BUFF_SIZE);
-		memset(end, '\0', MAX_BUFF_SIZE);
-
-		memcpy(start, haystack, (unsigned long)(last_pos - haystack));
-		memcpy(end, last_pos + len, strlen(last_pos + len));
-
-		sprintf(haystack, "%s%s%s", start, replc, end);
-		last_pos =
-		    strstr(haystack + (unsigned long)(last_pos - haystack) +
-			       strlen(replc),
-			   needle);
-	}
-}
-
-void replace_str(char *haystack, char *needle, char *replc)
-{
-	char str1[MAX_BUFF_SIZE] = {'\0'}, str2[MAX_BUFF_SIZE] = {'\0'},
-	     str3[MAX_BUFF_SIZE] = {'\0'};
-	char haystack_cpy[MAX_BUFF_SIZE] = {'\0'};
-	char *pos1, *pos2;
-	int rt;
-
-	strncpy(haystack_cpy, haystack, MAX_BUFF_SIZE);
-
-	pos1 = strstr(haystack_cpy, "\"");
-
-	if (pos1 != NULL) {
-		pos1++;
-		pos2 = strstr(pos1, "\"") + 1;
-
-		rt = sscanf(haystack_cpy, "%[^\"]s", str1);
-		if (!rt)
-			exit(-1);
-		rt = sscanf(pos1, "%[^\"]s", str2);
-		if (!rt)
-			exit(-1);
-		rt = sscanf(pos2, "%[^\"]n", str3);
-		if (!rt)
-			exit(-1);
-
-		expand_str(str1, needle, replc);
-		expand_str(str3, needle, replc);
-		sprintf(haystack, "%s\"%s\"%s", str1, str2, str3);
-	} else {
-		expand_str(haystack_cpy, needle, replc);
-		sprintf(haystack, "%s", haystack_cpy);
-	}
 }
 
 void define_symbol(struct Hashmap *mappings, FILE *infile, char *buffer)
@@ -237,7 +151,7 @@ int solve_include(struct Hashmap *mappings, struct LinkedList *directories,
 		return -1;
 
 	if (infile == stdin) {
-		snprintf(full_path, MAX_BUFF_SIZE, "./%s", file_name);
+		sprintf(full_path, "./%s", file_name);
 
 		if (!file_exists(full_path))
 			return -1;
@@ -318,9 +232,9 @@ int choose_action(struct Hashmap *mappings, struct LinkedList *directories,
 		if (!rv)
 			return -1;
 		if (has_key(mappings, aux))
-			snprintf(buffer, MAX_BUFF_SIZE, "#if 1");
+			sprintf(buffer, "#if 1");
 		else
-			snprintf(buffer, MAX_BUFF_SIZE, "#if 0");
+			sprintf(buffer, "#if 0");
 
 		check_if_cond(mappings, directories, infile, outfile, buffer,
 			      infile_name);
@@ -329,9 +243,9 @@ int choose_action(struct Hashmap *mappings, struct LinkedList *directories,
 		if (!rv)
 			return -1;
 		if (has_key(mappings, aux))
-			snprintf(buffer, MAX_BUFF_SIZE, "#if 0");
+			sprintf(buffer, "#if 0");
 		else
-			snprintf(buffer, MAX_BUFF_SIZE, "#if 1");
+			sprintf(buffer, "#if 1");
 
 		check_if_cond(mappings, directories, infile, outfile, buffer,
 			      infile_name);
@@ -452,11 +366,11 @@ int main(int argc, char *argv[])
 	struct LinkedList *directories =
 	    (struct LinkedList *)calloc(1, sizeof(struct LinkedList));
 
-	if (directories == NULL)
-		exit(ENOMEM);
-
 	struct Hashmap *mappings =
 	    (struct Hashmap *)calloc(1, sizeof(struct Hashmap));
+
+	if (directories == NULL)
+		exit(ENOMEM);
 
 	if (mappings == NULL)
 		exit(ENOMEM);
