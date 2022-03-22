@@ -4,3 +4,4 @@ src/.vscode/launch.json
 src/.vscode/c_cpp_properties.json
 src/valgrind-out.txt
 src/test_file
+_test
