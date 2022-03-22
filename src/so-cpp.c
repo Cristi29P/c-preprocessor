@@ -151,6 +151,11 @@ void define_symbol(struct Hashmap *mappings, FILE *infile, char *buffer)
 	sscanf(buffer, "#define %s %[^\n]s", symbol, value);
 	strncpy(value_copy, value, SMALL_BUFF);
 
+	if (strlen(value) == 0) {
+		put(mappings, symbol, strnlen(symbol, SMALL_BUFF) + 1, "", 1);
+		return;
+	}
+
 	while (value[strlen(value) - 1] == '\\') {
 		token = strtok(value, delim);
 		while (token != NULL) {
