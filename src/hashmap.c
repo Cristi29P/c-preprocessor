@@ -12,9 +12,8 @@ unsigned int hash_function_string(void *a)
 	unsigned long hash = 5381;
 	int c;
 
-	while ((c = *puchar_a++)) {
+	while ((c = *puchar_a++))
 		hash = ((hash << 5u) + hash) + c; /* hash * 33 + c */
-	}
 
 	return hash;
 }
@@ -24,6 +23,7 @@ void init_ht(struct Hashmap *ht, int hmax,
 	     int (*compare_function)(void *, void *))
 {
 	int i = 0;
+
 	ht->size = 0;
 	ht->hmax = hmax;
 	ht->hash_function = hash_function;
@@ -31,9 +31,8 @@ void init_ht(struct Hashmap *ht, int hmax,
 
 	ht->buckets =
 	    (struct LinkedList *)calloc(hmax, sizeof(struct LinkedList));
-	if (ht->buckets == NULL) {
+	if (ht->buckets == NULL)
 		exit(12);
-	}
 
 	while (i < hmax) {
 		list_init(&ht->buckets[i]);
@@ -85,25 +84,23 @@ void put(struct Hashmap *ht, void *key, int key_size_bytes, void *value,
 	}
 
 	info_tmp.key = calloc(1, key_size_bytes);
-	if (info_tmp.key == NULL) {
+	if (info_tmp.key == NULL)
 		exit(12);
-	}
 
 	memcpy(info_tmp.key, key, key_size_bytes);
 	DIE(info_tmp.key == NULL,
 	    "Memory allocation for info_tmp->key failed!");
 
 	info_tmp.value = calloc(1, value_size);
-	if (info_tmp.value == NULL) {
+	if (info_tmp.value == NULL)
 		exit(12);
-	}
 
 	memcpy(info_tmp.value, value, value_size);
 	DIE(info_tmp.value == NULL,
 	    "Memory allocation for info_tmp->key failed!");
 
-	add_node(&ht->buckets[index], list_size(&ht->buckets[index]),
-		     &info_tmp, sizeof(struct pair));
+	add_node(&ht->buckets[index], list_size(&ht->buckets[index]), &info_tmp,
+		 sizeof(struct pair));
 
 	ht->size++;
 }

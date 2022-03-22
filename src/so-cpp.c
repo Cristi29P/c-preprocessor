@@ -6,27 +6,10 @@
 // UNNECCESSARY DEAD CODE FURTHER REFACTORING
 // REFACUT SO_CPP.h
 
-void print_string_linkedlist(struct LinkedList *list)
-{
-	/* TODO */
-	struct Node *curr;
-
-	if (list == NULL) {
-		return;
-	}
-
-	curr = list->head;
-	while (curr != NULL) {
-		printf("%s ", (char *)curr->data);
-		curr = curr->next;
-	}
-
-	printf("\n");
-}
-
 int file_exists(const char *name)
 {
 	FILE *file = fopen(name, "r");
+
 	if (file) {
 		fclose(file);
 		return 1;
@@ -42,6 +25,7 @@ void add_cmd_define(struct Hashmap *mappings, char *argv)
 	rv = sscanf(argv, "%[^=]=%s", symbol, value);
 	if (rv <= 0) {
 		printf("Sscanf failed!\n");
+		exit(-1);
 	}
 	put(mappings, symbol, strlen(symbol) + 1, value, strlen(value) + 1);
 }
@@ -52,18 +36,18 @@ void add_cmd_directory(struct LinkedList *directories, char *argv)
 	int rv;
 
 	rv = sscanf(argv, "%s", directory);
-	if (rv < 0) {
+	if (rv < 0)
 		printf("Sscanf failed!\n");
-	}
+
 	add_node(directories, list_size(directories), directory,
 		 strlen(directory) + 1);
 }
 
 int check_param(char *argv)
 {
-	if (strncmp(argv, "-D", 2) || strncmp(argv, "-I", 2)) {
+	if (strncmp(argv, "-D", 2) || strncmp(argv, "-I", 2))
 		return -1;
-	}
+
 	return 0;
 }
 
@@ -72,6 +56,7 @@ int parse_cmd_arguments(struct Hashmap *mappings,
 			char *outfile, char *argv[], int argc)
 {
 	int input_set = 0;
+
 	for (int i = 1; i < argc; i++) {
 		if (!strncmp(argv[i], "-D", 2) && strlen(argv[i]) == 2) {
 			i++; /*inaintez la urmatorul argument*/
@@ -101,21 +86,23 @@ void expand_str(char *haystack, char *needle, char *replc)
 	     *last_pos;
 
 	size_t len = 0;
+
 	last_pos = NULL;
 
 	len = strnlen(needle, MAX_BUFF_SIZE);
-	while ((last_pos = strstr(haystack, needle))) {
+	last_pos = strstr(haystack, needle);
+	while (last_pos) {
 		memset(start, '\0', MAX_BUFF_SIZE);
 		memset(end, '\0', MAX_BUFF_SIZE);
-
 
 		memcpy(start, haystack, (unsigned long)(last_pos - haystack));
 		memcpy(end, last_pos + len, strlen(last_pos + len));
 
 		sprintf(haystack, "%s%s%s", start, replc, end);
-		if ((last_pos = strstr(haystack, needle))) {
-			break;
-		}
+		last_pos =
+		    strstr(haystack + (unsigned long)(last_pos - haystack) +
+			       strlen(replc),
+			   needle);
 	}
 }
 
@@ -125,6 +112,7 @@ void replace_str(char *haystack, char *needle, char *replc)
 	     str3[MAX_BUFF_SIZE] = {'\0'};
 	char haystack_cpy[MAX_BUFF_SIZE] = {'\0'};
 	char *pos1, *pos2;
+	int rt;
 
 	strncpy(haystack_cpy, haystack, MAX_BUFF_SIZE);
 
@@ -134,9 +122,15 @@ void replace_str(char *haystack, char *needle, char *replc)
 		pos1++;
 		pos2 = strstr(pos1, "\"") + 1;
 
-		sscanf(haystack_cpy, "%[^\"]s", str1);
-		sscanf(pos1, "%[^\"]s", str2);
-		sscanf(pos2, "%[^\"]n", str3);
+		rt = sscanf(haystack_cpy, "%[^\"]s", str1);
+		if (!rt)
+			exit(-1);
+		rt = sscanf(pos1, "%[^\"]s", str2);
+		if (!rt)
+			exit(-1);
+		rt = sscanf(pos2, "%[^\"]n", str3);
+		if (!rt)
+			exit(-1);
 
 		expand_str(str1, needle, replc);
 		expand_str(str3, needle, replc);
@@ -153,22 +147,26 @@ void define_symbol(struct Hashmap *mappings, FILE *infile, char *buffer)
 	char value_copy[MAX_BUFF_SIZE] = {'\0'};
 	char final[MAX_BUFF_SIZE] = {'\0'};
 	char *delim = "\t []{}<>=+-*/%!&|^.,:;()\\", *token;
+	int rt;
 
-	sscanf(buffer, "#define %s %[^\n]s", symbol, value);
+	rt = sscanf(buffer, "#define %s %[^\n]s", symbol, value);
+	if (!rt)
+		exit(-12);
 	strncpy(value_copy, value, MAX_BUFF_SIZE);
 
 	if (strlen(value) == 0) {
-		put(mappings, symbol, strnlen(symbol, MAX_BUFF_SIZE) + 1, "", 1);
+		put(mappings, symbol, strnlen(symbol, MAX_BUFF_SIZE) + 1, "",
+		    1);
 		return;
 	}
 
 	while (value[strlen(value) - 1] == '\\') {
 		token = strtok(value, delim);
 		while (token != NULL) {
-			if (has_key(mappings, token)) {
+			if (has_key(mappings, token))
 				replace_str(value_copy, token,
 					    get(mappings, token));
-			}
+
 			token = strtok(NULL, delim);
 		}
 		value_copy[strlen(value_copy) - 1] = '\0';
@@ -183,10 +181,10 @@ void define_symbol(struct Hashmap *mappings, FILE *infile, char *buffer)
 
 	token = strtok(value, delim);
 	while (token != NULL) {
-		if (has_key(mappings, token)) {
+		if (has_key(mappings, token))
 			replace_str(value_copy, token,
 				    (char *)get(mappings, token));
-		}
+
 		token = strtok(NULL, delim);
 	}
 	strncat(final, value_copy, MAX_BUFF_SIZE);
@@ -203,10 +201,10 @@ void solve_simple_line_sub(struct Hashmap *mappings, FILE *outfile,
 	strncpy(value_copy, buffer, MAX_BUFF_SIZE);
 	token = strtok(buffer, delim);
 	while (token != NULL) {
-		if (has_key(mappings, token)) {
+		if (has_key(mappings, token))
 			replace_str(value_copy, token,
 				    (char *)get(mappings, token));
-		}
+
 		token = strtok(NULL, delim);
 	}
 	fprintf(outfile, "%s", value_copy);
@@ -215,11 +213,14 @@ void solve_simple_line_sub(struct Hashmap *mappings, FILE *outfile,
 void undefine_symbol(struct Hashmap *mappings, char *buffer)
 {
 	char symbol[MAX_BUFF_SIZE] = {'\0'};
-	sscanf(buffer, "#undef %[^\n]s", symbol);
+	int rv;
 
-	if (has_key(mappings, symbol)) {
+	rv = sscanf(buffer, "#undef %[^\n]s", symbol);
+	if (!rv)
+		return;
+
+	if (has_key(mappings, symbol))
 		remove_ht_entry(mappings, symbol);
-	}
 }
 
 int solve_include(struct Hashmap *mappings, struct LinkedList *directories,
@@ -231,21 +232,23 @@ int solve_include(struct Hashmap *mappings, struct LinkedList *directories,
 	FILE *new_infile;
 	int ret, i, flag = 1;
 
-	sscanf(buffer, "#include \"%[^\"]s", file_name);
+	ret = sscanf(buffer, "#include \"%[^\"]s", file_name);
+	if (!ret)
+		return -1;
 
 	if (infile == stdin) {
 		snprintf(full_path, MAX_BUFF_SIZE, "./%s", file_name);
 
-		if (!file_exists(full_path)) {
+		if (!file_exists(full_path))
 			return -1;
-		}
+
 		new_infile = fopen(full_path, "r");
-		if (new_infile == NULL) {
+		if (new_infile == NULL)
 			return -1;
-		}
+
 		ret = parse_file(mappings, directories, new_infile, outfile,
 				 full_path);
-		if (ret == -1) {
+		if (ret) {
 			fclose(new_infile);
 			return ret;
 		}
@@ -255,14 +258,13 @@ int solve_include(struct Hashmap *mappings, struct LinkedList *directories,
 		strncpy(full_path, infile_name, PATH_LENGTH);
 		replace_str(full_path, ptr, file_name);
 
-		if (!file_exists(full_path)) {
+		if (!file_exists(full_path))
 			flag = 0;
-		}
+
 		if (flag) {
 			new_infile = fopen(full_path, "r");
-			if (new_infile == NULL) {
+			if (new_infile == NULL)
 				return -1;
-			}
 
 			ret = parse_file(mappings, directories, new_infile,
 					 outfile, full_path);
@@ -272,9 +274,8 @@ int solve_include(struct Hashmap *mappings, struct LinkedList *directories,
 			}
 			fclose(new_infile);
 		} else {
-			if (list_size(directories) == -1) {
+			if (list_size(directories) == -1)
 				return -1;
-			}
 
 			for (i = 0; i < list_size(directories); i++) {
 				tmp_dir = get_node(directories, i);
@@ -282,9 +283,9 @@ int solve_include(struct Hashmap *mappings, struct LinkedList *directories,
 					(char *)tmp_dir->data, file_name);
 				if (file_exists(full_path)) {
 					new_infile = fopen(full_path, "r");
-					if (new_infile == NULL) {
+					if (new_infile == NULL)
 						return -1;
-					}
+
 					ret = parse_file(mappings, directories,
 							 new_infile, outfile,
 							 full_path);
@@ -308,40 +309,43 @@ int choose_action(struct Hashmap *mappings, struct LinkedList *directories,
 	char aux[MAX_BUFF_SIZE] = {'\0'};
 	int rv;
 
-	if (!strncmp(buffer, "#define", 7)) {
+	if (!strncmp(buffer, "#define", 7))
 		define_symbol(mappings, infile, buffer);
-	} else if (!strncmp(buffer, "#undef", 6)) {
+	else if (!strncmp(buffer, "#undef", 6))
 		undefine_symbol(mappings, buffer);
-	} else if (!strncmp(buffer, "#ifdef", 6)) {
-		sscanf(buffer, "#ifdef %[^\n]s", aux);
-		if (has_key(mappings, aux)) {
+	else if (!strncmp(buffer, "#ifdef", 6)) {
+		rv = sscanf(buffer, "#ifdef %[^\n]s", aux);
+		if (!rv)
+			return -1;
+		if (has_key(mappings, aux))
 			snprintf(buffer, MAX_BUFF_SIZE, "#if 1");
-		} else {
+		else
 			snprintf(buffer, MAX_BUFF_SIZE, "#if 0");
-		}
+
 		check_if_cond(mappings, directories, infile, outfile, buffer,
 			      infile_name);
 	} else if (!strncmp(buffer, "#ifndef", 7)) {
-		sscanf(buffer, "#ifndef %[^\n]s", aux);
-		if (has_key(mappings, aux)) {
+		rv = sscanf(buffer, "#ifndef %[^\n]s", aux);
+		if (!rv)
+			return -1;
+		if (has_key(mappings, aux))
 			snprintf(buffer, MAX_BUFF_SIZE, "#if 0");
-		} else {
+		else
 			snprintf(buffer, MAX_BUFF_SIZE, "#if 1");
-		}
+
 		check_if_cond(mappings, directories, infile, outfile, buffer,
 			      infile_name);
-	} else if (!strncmp(buffer, "#if", 3)) {
+	} else if (!strncmp(buffer, "#if", 3))
 		check_if_cond(mappings, directories, infile, outfile, buffer,
 			      infile_name);
-	} else if (!strncmp(buffer, "#include", 8)) {
+	else if (!strncmp(buffer, "#include", 8)) {
 		rv = solve_include(mappings, directories, infile, outfile,
 				   buffer, infile_name);
-		if (rv == -1) {
+		if (rv)
 			return -1;
-		}
-	} else {
+
+	} else
 		solve_simple_line_sub(mappings, outfile, buffer);
-	}
 
 	return 0;
 }
@@ -349,15 +353,16 @@ int choose_action(struct Hashmap *mappings, struct LinkedList *directories,
 void go_to_endif(FILE *infile)
 {
 	char buffer[MAX_BUFF_SIZE] = {'\0'};
-	while (strncmp(buffer, "#endif", 6)) {
+
+	while (strncmp(buffer, "#endif", 6))
 		fgets(buffer, MAX_BUFF_SIZE, infile);
-	}
 }
 
 void solve_if(struct Hashmap *mappings, struct LinkedList *directories,
 	      FILE *infile, FILE *outfile, char *infile_name)
 {
 	char new_line[MAX_BUFF_SIZE] = {'\0'};
+
 	fgets(new_line, MAX_BUFF_SIZE, infile);
 	do {
 		choose_action(mappings, directories, infile, outfile, new_line,
@@ -366,10 +371,8 @@ void solve_if(struct Hashmap *mappings, struct LinkedList *directories,
 	} while (strncmp(new_line, "#endif", 6) &&
 		 strncmp(new_line, "#else", 5) &&
 		 strncmp(new_line, "#elif", 5));
-	/*Nu am ajuns la #endif, ne ducem acolo*/
-	if (strncmp(new_line, "#endif", 6)) {
+	if (strncmp(new_line, "#endif", 6))
 		go_to_endif(infile);
-	}
 }
 
 void check_if_cond(struct Hashmap *mappings, struct LinkedList *directories,
@@ -378,19 +381,21 @@ void check_if_cond(struct Hashmap *mappings, struct LinkedList *directories,
 	char cond[MAX_BUFF_SIZE] = {'\0'}, cond_aux[MAX_BUFF_SIZE] = {'\0'},
 	     new_line[MAX_BUFF_SIZE] = {'\0'}, *aux, *ret;
 	long value_cond;
+	int rv;
 
-	sscanf(buffer, "#if %[^\n]s", cond);
+	rv = sscanf(buffer, "#if %[^\n]s", cond);
+	if (!rv)
+		exit(-1);
+
 	if (has_key(mappings, cond)) { /*daca exista cheia in mapa*/
 		strncpy(cond_aux, cond, MAX_BUFF_SIZE);
 		memset(cond, '\0', MAX_BUFF_SIZE);
 		ret = (char *)get(mappings, cond_aux);
 
-		if (!strlen(ret)) {
-			strncpy(cond, "1",
-				MAX_BUFF_SIZE); /*daca avem valoare nula pentru cheia respectiva*/
-		} else {
+		if (!strlen(ret))
+			strncpy(cond, "1", MAX_BUFF_SIZE);
+		else
 			strncpy(cond, ret, MAX_BUFF_SIZE);
-		}
 	}
 
 	value_cond = strtol(cond, &aux, 10);
@@ -428,17 +433,14 @@ int parse_file(struct Hashmap *mappings, struct LinkedList *directories,
 	       FILE *infile, FILE *outfile, char *infile_name)
 {
 	char buffer[MAX_BUFF_SIZE] = {'\0'};
-	int rv = 0;
 
 	while (fgets(buffer, MAX_BUFF_SIZE, infile)) {
-		rv = choose_action(mappings, directories, infile, outfile,
-				   buffer, infile_name);
-		if (rv == -1) {
-			return rv;
-		}
+		if (choose_action(mappings, directories, infile, outfile,
+				  buffer, infile_name))
+			return -1;
 	}
 
-	return rv;
+	return 0;
 }
 
 int main(int argc, char *argv[])
@@ -450,16 +452,14 @@ int main(int argc, char *argv[])
 	struct LinkedList *directories =
 	    (struct LinkedList *)calloc(1, sizeof(struct LinkedList));
 
-	if (directories == NULL) {
+	if (directories == NULL)
 		exit(ENOMEM);
-	}
 
 	struct Hashmap *mappings =
 	    (struct Hashmap *)calloc(1, sizeof(struct Hashmap));
 
-	if (mappings == NULL) {
+	if (mappings == NULL)
 		exit(ENOMEM);
-	}
 
 	list_init(directories);
 	init_ht(mappings, HT_ENTRIES, hash_function_string, cmp_strings);
@@ -499,7 +499,6 @@ int main(int argc, char *argv[])
 	/*Finished the checking phase*/
 
 	rv = parse_file(mappings, directories, input_file, output_file, infile);
-
 
 	/*Memory clean-up*/
 	fclose(input_file);
