@@ -20,6 +20,8 @@ void add_node(struct LinkedList *list, int nth_node, void *new_data,
 
 void *remove_node(struct LinkedList *list, int nth_node);
 
+void *get_node(struct LinkedList *list, int n);
+
 int list_size(struct LinkedList *list);
 
 void free_list_mem(struct LinkedList **list);

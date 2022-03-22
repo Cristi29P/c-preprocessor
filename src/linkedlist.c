@@ -76,6 +76,27 @@ void *remove_node(struct LinkedList *list, int n)
 	return curr;
 }
 
+void *get_node(struct LinkedList *list, int n) {
+	struct Node *curr;
+
+	if (list == NULL || list->head == NULL)
+		return NULL;
+
+	if (n > list->size - 1)
+		n = list->size - 1;
+
+	if (n < 0)
+		return NULL;
+
+	curr = list->head;
+
+	for (; n > 0; --n) {
+		curr = curr->next;
+	}
+
+	return curr;
+}
+
 int list_size(struct LinkedList *list)
 {
 	return (list == NULL) ? -1 : list->size;

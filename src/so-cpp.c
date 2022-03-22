@@ -6,6 +6,24 @@
 // UNNECCESSARY DEAD CODE FURTHER REFACTORING
 // REFACUT SO_CPP.h
 
+void print_string_linkedlist(struct LinkedList *list)
+{
+	/* TODO */
+	struct Node *curr;
+
+	if (list == NULL) {
+		return;
+	}
+
+	curr = list->head;
+	while (curr != NULL) {
+		printf("%s ", (char *)curr->data);
+		curr = curr->next;
+	}
+
+	printf("\n");
+}
+
 int file_exists(const char *name)
 {
 	FILE *file = fopen(name, "r");
@@ -198,8 +216,9 @@ int solve_include(struct Hashmap *mappings, struct LinkedList *directories,
 {
 	char file_name[PATH_LENGTH] = {'\0'}, full_path[MAX_BUFF_SIZE] = {'\0'};
 	char *ptr;
+	struct Node *tmp_dir;
 	FILE *new_infile;
-	int ret;
+	int ret, i, flag = 1;
 
 	sscanf(buffer, "#include \"%[^\"]s", file_name);
 
@@ -220,29 +239,55 @@ int solve_include(struct Hashmap *mappings, struct LinkedList *directories,
 			return ret;
 		}
 		fclose(new_infile);
-	} else {
+	} else if (strlen(infile_name) != 0) {
 		ptr = strrchr(infile_name, '/') + 1;
 		strncpy(full_path, infile_name, PATH_LENGTH);
 		replace_str(full_path, ptr, file_name);
 
 		if (!file_exists(full_path)) {
-			return -1;
+			flag = 0;
 		}
+		if (flag) {
+			new_infile = fopen(full_path, "r");
+			if (new_infile == NULL) {
+				return -1;
+			}
 
-		new_infile = fopen(full_path, "r");
-		if (new_infile == NULL) {
-			return -1;
-		}
-
-		ret = parse_file(mappings, directories, new_infile, outfile,
-				 full_path);
-		if (ret == -1) {
+			ret = parse_file(mappings, directories, new_infile,
+					 outfile, full_path);
+			if (ret == -1) {
+				fclose(new_infile);
+				return ret;
+			}
 			fclose(new_infile);
-			return ret;
-		}
-		fclose(new_infile);
-	}
+		} else {
+			if (list_size(directories) == -1) {
+				return -1;
+			}
 
+			for (i = 0; i < list_size(directories); i++) {
+				tmp_dir = get_node(directories, i);
+				sprintf(full_path, "%s/%s",
+					(char *)tmp_dir->data, file_name);
+				if (file_exists(full_path)) {
+					new_infile = fopen(full_path, "r");
+					if (new_infile == NULL) {
+						return -1;
+					}
+					ret = parse_file(mappings, directories,
+							 new_infile, outfile,
+							 full_path);
+					if (ret == -1) {
+						fclose(new_infile);
+						return -1;
+					}
+					fclose(new_infile);
+					return 0;
+				}
+			}
+			return -1;
+		}
+	}
 	return 0;
 }
 
