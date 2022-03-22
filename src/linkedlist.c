@@ -26,13 +26,16 @@ void add_node(struct LinkedList *list, int n, void *new_data,
 	}
 
 	new_node = (struct Node *)calloc(1, sizeof(struct Node));
-	DIE(new_node == NULL, "Memory allocation for the new_node failed!");
+	if (new_node == NULL) {
+		exit(12);
+	}
 
 	new_node->next = curr;
 
 	new_node->data = calloc(1, new_data_size);
-	DIE(new_node->data == NULL,
-	    "Memory allocation for the new_node->data failed!");
+	if (new_node->data == NULL) {
+		exit(12);
+	}
 
 	memcpy(new_node->data, new_data, new_data_size);
 	DIE(new_node->data == NULL, "Memcpy failed for the new_node->data!");

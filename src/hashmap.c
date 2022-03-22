@@ -31,7 +31,9 @@ void init_ht(struct Hashmap *ht, int hmax,
 
 	ht->buckets =
 	    (struct LinkedList *)calloc(hmax, sizeof(struct LinkedList));
-	DIE(ht->buckets == NULL, "Memory allocation failed for ht->buckets!");
+	if (ht->buckets == NULL) {
+		exit(12);
+	}
 
 	while (i < hmax) {
 		list_init(&ht->buckets[i]);
@@ -83,16 +85,18 @@ void put(struct Hashmap *ht, void *key, int key_size_bytes, void *value,
 	}
 
 	info_tmp.key = calloc(1, key_size_bytes);
-	DIE(info_tmp.key == NULL,
-	    "Memory allocation for info_tmp->key failed!");
+	if (info_tmp.key == NULL) {
+		exit(12);
+	}
 
 	memcpy(info_tmp.key, key, key_size_bytes);
 	DIE(info_tmp.key == NULL,
 	    "Memory allocation for info_tmp->key failed!");
 
 	info_tmp.value = calloc(1, value_size);
-	DIE(info_tmp.value == NULL,
-	    "Memory allocation for info_tmp->key failed!");
+	if (info_tmp.value == NULL) {
+		exit(12);
+	}
 
 	memcpy(info_tmp.value, value, value_size);
 	DIE(info_tmp.value == NULL,
