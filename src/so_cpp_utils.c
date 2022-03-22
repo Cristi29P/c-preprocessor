@@ -1,4 +1,4 @@
-#include "so-cpp_utils.h"
+#include "so_cpp_utils.h"
 
 void define_symbol(struct Hashmap *mappings, FILE *infile, char *buffer)
 {
@@ -13,7 +13,7 @@ void define_symbol(struct Hashmap *mappings, FILE *infile, char *buffer)
 
 	strncpy(value_copy, value, MAX_BUFF_SIZE);
 
-	/*if the define has no associated value we add it to the map*/
+	/*If the define has no associated value we add it to the map*/
 	/*with the empty null as value for the key*/
 	if (strlen(value) == 0) {
 		put(mappings, symbol, strnlen(symbol, MAX_BUFF_SIZE) + 1, "",
@@ -21,11 +21,11 @@ void define_symbol(struct Hashmap *mappings, FILE *infile, char *buffer)
 		return;
 	}
 
-	/*we check for multiline defines by comparing the last character*/
+	/*We check for multiline defines by comparing the last character*/
 	/*of each line with '\\'*/
 	while (value[strlen(value) - 1] == '\\') {
 		token = strtok(value, delim);
-		/*we tokenize the line so we make sure*/
+		/*We tokenize the line so we make sure*/
 		/* there is no macro that needs to be expanded*/
 		/* inside another macro*/
 		while (token != NULL) {
@@ -45,7 +45,7 @@ void define_symbol(struct Hashmap *mappings, FILE *infile, char *buffer)
 		strncpy(value_copy, value, MAX_BUFF_SIZE);
 	}
 
-	/*if no multiline define we do the basic macro expanding*/
+	/*If no multiline define we do the basic macro expanding*/
 	/*and substitution*/
 	token = strtok(value, delim);
 	while (token != NULL) {
@@ -56,7 +56,7 @@ void define_symbol(struct Hashmap *mappings, FILE *infile, char *buffer)
 		token = strtok(NULL, delim);
 	}
 
-	/*we add the final value expanded value to the hashmap*/
+	/*We add the final value expanded value to the hashmap*/
 	strncat(final, value_copy, MAX_BUFF_SIZE);
 	put(mappings, symbol, strnlen(symbol, MAX_BUFF_SIZE) + 1, final,
 	    strnlen(final, MAX_BUFF_SIZE) + 1);
@@ -68,7 +68,7 @@ void solve_simple_line_sub(struct Hashmap *mappings, FILE *outfile,
 	char value_copy[MAX_BUFF_SIZE] = {'\0'};
 	char *delim = "\t []{}<>=+-*/%!&|^.,:;()\\", *token;
 
-	/*we expand all the available tokens that are registered*/
+	/*We expand all the available tokens that are registered*/
 	/*as macros inside the hashtable*/
 	strncpy(value_copy, buffer, MAX_BUFF_SIZE);
 	token = strtok(buffer, delim);
@@ -90,11 +90,17 @@ void undefine_symbol(struct Hashmap *mappings, char *buffer)
 	rv = sscanf(buffer, "#undef %[^\n]s", symbol);
 	if (!rv)
 		return;
-	/*remove key_value entry from hashmap*/
+	/*Remove key_value entry from hashmap*/
 	if (has_key(mappings, symbol))
 		remove_ht_entry(mappings, symbol);
 }
 
+/**
+* The functions follows the logic: firstly check if we read from stdin
+* (that means that we search for the header file in the current dir).
+* If we read from an input file we search recursively in all the
+* included headers and the given directories
+*/
 int solve_include(struct Hashmap *mappings, struct LinkedList *directories,
 		  FILE *infile, FILE *outfile, char *buffer, char *infile_name)
 {
@@ -174,13 +180,16 @@ int solve_include(struct Hashmap *mappings, struct LinkedList *directories,
 	}
 	return 0;
 }
-
+/**
+ * Parse each type of action and choose the requiered function
+ * The function can make recursive calls to parse other files
+ */
 int choose_action(struct Hashmap *mappings, struct LinkedList *directories,
 		  FILE *infile, FILE *outfile, char *buffer, char *infile_name)
 {
 	char aux[MAX_BUFF_SIZE] = {'\0'};
 	int rv;
-	/*parse each type of action*/
+	/*Parse each type of action*/
 	if (!strncmp(buffer, "#define", 7))
 		define_symbol(mappings, infile, buffer);
 	else if (!strncmp(buffer, "#undef", 6))
@@ -222,6 +231,9 @@ int choose_action(struct Hashmap *mappings, struct LinkedList *directories,
 	return 0;
 }
 
+/*If we have finished parsing an #if condition, we skip
+ * the rest of the body and go straight to the end
+ */
 void go_to_endif(FILE *infile)
 {
 	char buffer[MAX_BUFF_SIZE] = {'\0'};
@@ -230,6 +242,7 @@ void go_to_endif(FILE *infile)
 		fgets(buffer, MAX_BUFF_SIZE, infile);
 }
 
+/*Solves the #if, #ifdef, #ifndef conditions*/
 void solve_if(struct Hashmap *mappings, struct LinkedList *directories,
 	      FILE *infile, FILE *outfile, char *infile_name)
 {
@@ -259,7 +272,8 @@ void check_if_cond(struct Hashmap *mappings, struct LinkedList *directories,
 	if (!rv)
 		exit(-1);
 
-	if (has_key(mappings, cond)) { /*daca exista cheia in mapa*/
+	/*Extract the condition*/
+	if (has_key(mappings, cond)) {
 		strncpy(cond_aux, cond, MAX_BUFF_SIZE);
 		memset(cond, '\0', MAX_BUFF_SIZE);
 		ret = (char *)get(mappings, cond_aux);
@@ -269,13 +283,13 @@ void check_if_cond(struct Hashmap *mappings, struct LinkedList *directories,
 		else
 			strncpy(cond, ret, MAX_BUFF_SIZE);
 	}
-
+	/*Check if the condition is a string or number*/
 	value_cond = strtol(cond, &aux, 10);
-	if (value_cond == 0 && cond[0] != '0') {
+	if (value_cond == 0 && cond[0] != '0')
 		value_cond = 1;
-		printf("AICI\n");
-	}
 
+	/*Solve the if-else case and call again the function*/
+	/*If you hit an #elif*/
 	strncpy(new_line, buffer, MAX_BUFF_SIZE);
 	if (value_cond) {
 		solve_if(mappings, directories, infile, outfile, infile_name);
@@ -301,6 +315,9 @@ void check_if_cond(struct Hashmap *mappings, struct LinkedList *directories,
 	}
 }
 
+/*Parse the input file and feed the lines to the function
+ * which handles the parsing
+ */
 int parse_file(struct Hashmap *mappings, struct LinkedList *directories,
 	       FILE *infile, FILE *outfile, char *infile_name)
 {

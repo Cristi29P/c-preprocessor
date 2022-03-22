@@ -1,5 +1,6 @@
 #include "cmd_line.h"
 
+/*Add the included define with -D to the map*/
 void add_cmd_define(struct Hashmap *mappings, char *argv)
 {
 	char symbol[MAX_BUFF_SIZE] = {'\0'}, value[MAX_BUFF_SIZE] = {'\0'};
@@ -12,6 +13,7 @@ void add_cmd_define(struct Hashmap *mappings, char *argv)
 	put(mappings, symbol, strlen(symbol) + 1, value, strlen(value) + 1);
 }
 
+/*Add the included directory with -I to the list*/
 void add_cmd_directory(struct LinkedList *directories, char *argv)
 {
 	char directory[PATH_LENGTH] = {'\0'};

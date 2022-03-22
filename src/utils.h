@@ -10,12 +10,10 @@
 #include <string.h>
 #include <ctype.h>
 
-
 #define PATH_LENGTH 50
 #define SMALL_BUFF 20
 #define HT_ENTRIES 10
 #define MAX_BUFF_SIZE 256
-
 
 /* useful macro for handling error codes */
 #define DIE(assertion, call_description)                                       \

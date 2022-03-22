@@ -1,5 +1,5 @@
 #include "utils.h"
-#include "so-cpp_utils.h"
+#include "so_cpp_utils.h"
 #include "cmd_line.h"
 #include "hashmap.h"
 #include "linkedlist.h"

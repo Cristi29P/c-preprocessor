@@ -1,3 +1,9 @@
+/*@Copyright Paris Cristian-Tanase 2022*/
+/*Sursa este scrisa exclusiv de mine si este prelucrata dupa scheletul*/
+/*de cod de la SD din anul I (2020).*/
+/*Din aceasta cauza, semnaturile pot aparea similare sau unele bucati*/
+/*de cod pot sa coincida cu ale altor colegi.*/
+
 #ifndef HASHMAP_H__
 #define HASHMAP_H__
 

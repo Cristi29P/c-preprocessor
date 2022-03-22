@@ -3,7 +3,7 @@
 
 #include "hashmap.h"
 
-void define_symbol(struct Hashmap *mappings, FILE *infile, char *buffer);
+void define_symbol(struct Hashmap *mappings, FILE * infile, char *buffer);
 
 void solve_simple_line_sub(struct Hashmap *mappings, FILE *outfile,
 			   char *buffer);
@@ -13,14 +13,14 @@ void undefine_symbol(struct Hashmap *mappings, char *buffer);
 int solve_include(struct Hashmap *mappings, struct LinkedList *directories,
 		  FILE *infile, FILE *outfile,
 		  char *buffer, char *infile_name);
-		  
+
 void go_to_endif(FILE *infile);
 
 void solve_if(struct Hashmap *mappings, struct LinkedList *directories,
 	      FILE *infile, FILE *outfile, char *infile_name);
 
 void check_if_cond(struct Hashmap *mappings, struct LinkedList *directories,
-		FILE * infile, FILE * outfile,
+		FILE *infile, FILE *outfile,
 		char *buffer, char *infile_name);
 
 int choose_action(struct Hashmap *mappings, struct LinkedList *directories,

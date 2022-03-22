@@ -19,6 +19,10 @@ int check_param(char *argv)
 	return 0;
 }
 
+/**
+ * Recursively expand the places where the needle occurs
+ * and replace it
+ */
 void expand_str(char *haystack, char *needle, char *replc)
 {
 	char start[MAX_BUFF_SIZE] = {'\0'}, end[MAX_BUFF_SIZE] = {'\0'},
@@ -45,6 +49,10 @@ void expand_str(char *haystack, char *needle, char *replc)
 	}
 }
 
+/**
+ * Split the haystack in 3 strings and expand the outer parts
+ * so we don't have to deal with the " "" " case
+ */
 void replace_str(char *haystack, char *needle, char *replc)
 {
 	char str1[MAX_BUFF_SIZE] = {'\0'}, str2[MAX_BUFF_SIZE] = {'\0'},
