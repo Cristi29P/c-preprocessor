@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "cmd_line.h"
 
 /*Add the included define with -D to the map*/

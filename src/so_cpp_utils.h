@@ -3,7 +3,7 @@
 
 #include "hashmap.h"
 
-void define_symbol(struct Hashmap *mappings, FILE * infile, char *buffer);
+void define_symbol(struct Hashmap *mappings, void *infile, char *buffer);
 
 void solve_simple_line_sub(struct Hashmap *mappings, FILE *outfile,
 			   char *buffer);

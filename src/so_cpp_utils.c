@@ -1,6 +1,7 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "so_cpp_utils.h"
 
-void define_symbol(struct Hashmap *mappings, FILE *infile, char *buffer)
+void define_symbol(struct Hashmap *mappings, void *infile, char *buffer)
 {
 	char symbol[MAX_BUFF_SIZE] = {'\0'}, value[MAX_BUFF_SIZE] = {'\0'},
 	     value_copy[MAX_BUFF_SIZE] = {'\0'}, final[MAX_BUFF_SIZE] = {'\0'},
@@ -41,7 +42,7 @@ void define_symbol(struct Hashmap *mappings, FILE *infile, char *buffer)
 		memset(value, '\0', MAX_BUFF_SIZE);
 		memset(value_copy, '\0', MAX_BUFF_SIZE);
 
-		fscanf(infile, " %[^\n]s", value);
+		fscanf((FILE *)infile, " %[^\n]s", value);
 		strncpy(value_copy, value, MAX_BUFF_SIZE);
 	}
 

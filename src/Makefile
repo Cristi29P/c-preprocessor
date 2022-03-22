@@ -13,7 +13,7 @@ hashmap.obj: hashmap.c
 linkedlist.obj: linkedlist.c
     $(CC) $(CFLAGS) linkedlist.c
 
-cmd_line.obj: so-cmd_line.c
+cmd_line.obj: cmd_line.c
     $(CC) $(CFLAGS) cmd_line.c
 
 utils.obj: utils.c

@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "utils.h"
 #include "so_cpp_utils.h"
 #include "cmd_line.h"

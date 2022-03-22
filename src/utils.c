@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "utils.h"
 
 int file_exists(const char *name)
